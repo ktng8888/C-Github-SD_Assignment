@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - SecondLife</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="login-container">
+    <div class="left-panel">
+      <div class="illustration">
+        <img src="{{ url_for('static', filename='images/electronic_login_image.png') }}" alt="Electronic">
+        <h3>World Biggest Electronic Second Hand Store</h3>
+        <p>Join our community and sell or buy second-hand electronics with confidence and convenience.</p>
+      </div>
+    </div>
+    <div class="right-panel">
+      <h1 class="logo">𝙎𝙚𝙘𝙤𝙣𝙙𝙇𝙞𝙛𝙚</h1>
+      <h2>Create Your Account</h2>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <p class="flash">{{ messages[0] }}</p>
+        {% endif %}
+      {% endwith %}
+      <form method="POST" class="login-form">
+        <label for="username">Username</label>
+        <input type="text" name="username" id="username" required>
+
+        <label for="phone">Phone Number</label>
+        <input type="text" name="phone" id="phone" required>
+
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" required>
+
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" required>
+
+        <label for="confirm">Confirm Password</label>
+        <input type="password" name="confirm" id="confirm" required>
+
+        <button type="submit" class="login-button">Register</button>
+
+        <p class="new-user">
+          Already have an account? <a href="/login">Login</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

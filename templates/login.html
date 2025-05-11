@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Lovebirds</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="login-container">
+    <div class="left-panel">
+      <div class="illustration">
+        <img src="{{ url_for('static', filename='images/electronic_login_image.png') }}" alt="Electronic">
+        <h3>World Biggest Electronic Second Hand Store</h3>
+        <p>Sign in to explore affordable and dependable second-hand electronics, where quality meets great value every time</p>
+      </div>
+    </div>
+    <div class="right-panel">
+      <h1 class="logo">𝙎𝙚𝙘𝙤𝙣𝙙𝙇𝙞𝙛𝙚</h1>
+      <h2>Welcome to SecondLife</h2>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <p class="flash">{{ messages[0] }}</p>
+        {% endif %}
+      {% endwith %}
+      <form method="POST" class="login-form">
+        <label for="username">Username or Email</label>
+        <input type="text" name="username" id="username" required>
+
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" required>
+
+        <div class="form-options">
+          <a href="#" class="forgot">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="login-button">Sign in</button>
+
+        <!-- <div class="divider">or</div>
+
+        <button type="button" class="google-button">
+          <img src="{{ url_for('static', filename='images/Google_Icons-09-512.webp') }}" alt="Google Icon"> Sign in with Google
+        </button> -->
+
+        <p class="new-user">
+          New to SecondLife? <a href="/register">Create Account</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

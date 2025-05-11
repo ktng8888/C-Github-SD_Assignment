@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecondLife - Premium Second-Hand Electronics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='footer.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='products.css') }}">
+</head>
+<body>
+  <div class="main-container">
+    <!-- Include header -->
+    {% include 'header.html' %}
+    
+    <!-- Products page content -->
+    <main class="products-page">
+      <!-- Page header with title and search -->
+      <div class="products-header">
+        <h1 class="page-title">Browse Products</h1>
+        <div class="search-container">
+          <form action="{{ url_for('products') }}" method="GET" class="search-form">
+            <input type="text" name="search" placeholder="Search electronics..." value="{{ request.args.get('search', '') }}" class="search-input">
+            <button type="submit" class="search-button">
+              <i class="fas fa-search"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Products content area -->
+      <div class="products-content">
+        <!-- Sidebar with filters -->
+        <aside class="filters-sidebar">
+          <div class="filter-section">
+            <h3 class="filter-title">Categories</h3>
+            <ul class="category-list">
+              <li class="category-item {% if not selected_category %}active{% endif %}">
+                <a href="{{ url_for('products') }}">All Categories</a>
+              </li>
+              <li class="category-item {% if selected_category == 'smartphones' %}active{% endif %}">
+                <a href="{{ url_for('products', category='smartphones') }}">
+                  <i class="fas fa-mobile-alt"></i> Smartphones
+                </a>
+              </li>
+              <li class="category-item {% if selected_category == 'laptops' %}active{% endif %}">
+                <a href="{{ url_for('products', category='laptops') }}">
+                  <i class="fas fa-laptop"></i> Laptops
+                </a>
+              </li>
+              <li class="category-item {% if selected_category == 'tablets' %}active{% endif %}">
+                <a href="{{ url_for('products', category='tablets') }}">
+                  <i class="fas fa-tablet-alt"></i> Tablets
+                </a>
+              </li>
+              <li class="category-item {% if selected_category == 'cameras' %}active{% endif %}">
+                <a href="{{ url_for('products', category='cameras') }}">
+                  <i class="fas fa-camera"></i> Cameras
+                </a>
+              </li>
+              <li class="category-item {% if selected_category == 'audio' %}active{% endif %}">
+                <a href="{{ url_for('products', category='audio') }}">
+                  <i class="fas fa-headphones"></i> Audio
+                </a>
+              </li>
+            </ul>
+          </div>
+          
+          <div class="filter-section">
+            <h3 class="filter-title">Price Range</h3>
+            <div class="price-filter">
+              <div class="price-inputs">
+                <div class="price-input-group">
+                  <label for="min-price">Min</label>
+                  <input type="number" id="min-price" name="min_price" placeholder="$0" min="0">
+                </div>
+                <div class="price-input-group">
+                  <label for="max-price">Max</label>
+                  <input type="number" id="max-price" name="max_price" placeholder="$5000" min="0">
+                </div>
+              </div>
+              <button type="button" class="apply-price-button">Apply</button>
+            </div>
+          </div>
+          
+          <div class="filter-section">
+            <h3 class="filter-title">Condition</h3>
+            <div class="condition-filter">
+              <label class="condition-option">
+                <input type="checkbox" name="condition" value="like_new"> Like New
+              </label>
+              <label class="condition-option">
+                <input type="checkbox" name="condition" value="excellent"> Excellent
+              </label>
+              <label class="condition-option">
+                <input type="checkbox" name="condition" value="good"> Good
+              </label>
+              <label class="condition-option">
+                <input type="checkbox" name="condition" value="fair"> Fair
+              </label>
+            </div>
+          </div>
+          
+          <div class="filter-section mobile-only">
+            <button type="button" class="apply-filters-button">Apply Filters</button>
+            <button type="button" class="clear-filters-button">Clear All</button>
+          </div>
+        </aside>
+        
+        <!-- Product grid -->
+        <div class="products-grid-container">
+          <div class="products-toolbar">
+            <div class="results-count">
+              <span>Showing {{ products|length }} results</span>
+              {% if request.args.get('search') %}
+                <span class="search-query">for "{{ request.args.get('search') }}"</span>
+              {% endif %}
+            </div>
+            <div class="sorting-options">
+              <label for="sort-by">Sort by:</label>
+              <select id="sort-by" class="sort-select">
+                <option value="newest">Newest First</option>
+                <option value="price_low">Price: Low to High</option>
+                <option value="price_high">Price: High to Low</option>
+                <option value="popular">Most Popular</option>
+              </select>
+            </div>
+            
+            <!-- Mobile filter toggle -->
+            <button class="filter-toggle-button">
+              <i class="fas fa-filter"></i> Filters
+            </button>
+          </div>
+          
+          <div class="products-grid">
+            <!-- Product card 1 -->
+            <div class="product-card">
+              <div class="product-image">
+                <img src="{{ url_for('static', filename='images/products/iphone.jpg') }}" alt="iPhone 12">
+                <div class="product-badge">15% OFF</div>
+                <button class="wishlist-button">
+                  <i class="far fa-heart"></i>
+                </button>
+              </div>
+              <div class="product-info">
+                <div class="product-category">Smartphones</div>
+                <h3 class="product-title">iPhone 12 Pro - 128GB</h3>
+                <div class="product-price">
+                  <span class="current-price">$649</span>
+                  <span class="original-price">$799</span>
+                </div>
+                <div class="product-meta">
+                  <div class="product-rating">
+                    <i class="fas fa-star"></i>
+                    <span>4.8 (45)</span>
+                  </div>
+                  <div class="product-time">
+                    <i class="far fa-clock"></i>
+                    <span>Posted 2 days ago</span>
+                  </div>
+                </div>
+              </div>
+              <a href="/products/1" class="product-link"></a>
+            </div>
+            
+            <!-- Product card 2 -->
+            <div class="product-card">
+              <div class="product-image">
+                <img src="{{ url_for('static', filename='images/products/macbook.jpg') }}" alt="MacBook Pro">
+                <div class="product-badge">Like New</div>
+                <button class="wishlist-button">
+                  <i class="far fa-heart"></i>
+                </button>
+              </div>
+              <div class="product-info">
+                <div class="product-category">Laptops</div>
+                <h3 class="product-title">MacBook Pro 2021 - M1 Pro</h3>
+                <div class="product-price">
+                  <span class="current-price">$1,499</span>
+                  <span class="original-price">$1,999</span>
+                </div>
+                <div class="product-meta">
+                  <div class="product-rating">
+                    <i class="fas fa-star"></i>
+                    <span>4.9 (32)</span>
+                  </div>
+                  <div class="product-time">
+                    <i class="far fa-clock"></i>
+                    <span>Posted 1 week ago</span>
+                  </div>
+                </div>
+              </div>
+              <a href="/products/2" class="product-link"></a>
+            </div>
+            
+            <!-- Product card 3 -->
+            <div class="product-card">
+              <div class="product-image">
+                <img src="{{ url_for('static', filename='images/products/headphones.jpg') }}" alt="Sony Headphones">
+                <button class="wishlist-button">
+                  <i class="far fa-heart"></i>
+                </button>
+              </div>
+              <div class="product-info">
+                <div class="product-category">Audio</div>
+                <h3 class="product-title">Sony WH-1000XM4 Headphones</h3>
+                <div class="product-price">
+                  <span class="current-price">$229</span>
+                  <span class="original-price">$349</span>
+                </div>
+                <div class="product-meta">
+                  <div class="product-rating">
+                    <i class="fas fa-star"></i>
+                    <span>4.7 (56)</span>
+                  </div>
+                  <div class="product-time">
+                    <i class="far fa-clock"></i>
+                    <span>Posted 3 days ago</span>
+                  </div>
+                </div>
+              </div>
+              <a href="/products/3" class="product-link"></a>
+            </div>
+            
+            <!-- Product card 4 -->
+            <div class="product-card">
+              <div class="product-image">
+                <img src="{{ url_for('static', filename='images/products/ipad.jpg') }}" alt="iPad Pro">
+                <div class="product-badge">20% OFF</div>
+                <button class="wishlist-button">
+                  <i class="far fa-heart"></i>
+                </button>
+              </div>
+              <div class="product-info">
+                <div class="product-category">Tablets</div>
+                <h3 class="product-title">iPad Pro 12.9" - 256GB</h3>
+                <div class="product-price">
+                  <span class="current-price">$849</span>
+                  <span class="original-price">$1,099</span>
+                </div>
+                <div class="product-meta">
+                  <div class="product-rating">
+                    <i class="fas fa-star"></i>
+                    <span>4.9 (28)</span>
+                  </div>
+                  <div class="product-time">
+                    <i class="far fa-clock"></i>
+                    <span>Posted 1 day ago</span>
+                  </div>
+                </div>
+              </div>
+              <a href="/products/4" class="product-link"></a>
+            </div>
+            
+            <!-- Product card 5 -->
+            <div class="product-card">
+              <div class="product-image">
+                <img src="{{ url_for('static', filename='images/products/camera.jpg') }}" alt="Sony Alpha A7 III">
+                <button class="wishlist-button">
+                  <i class="far fa-heart"></i>
+                </button>
+              </div>
+              <div class="product-info">
+                <div class="product-category">Cameras</div>
+                <h3 class="product-title">Sony Alpha A7 III - Full Frame</h3>
+                <div class="product-price">
+                  <span class="current-price">$1,799</span>
+                  <span class="original-price">$2,199</span>
+                </div>
+                <div class="product-meta">
+                  <div class="product-rating">
+                    <i class="fas fa-star"></i>
+                    <span>4.8 (19)</span>
+                  </div>
+                  <div class="product-time">
+                    <i class="far fa-clock"></i>
+                    <span>Posted 5 days ago</span>
+                  </div>
+                </div>
+              </div>
+              <a href="/products/5" class="product-link"></a>
+            </div>
+            
+            <!-- Product card 6 -->
+            <div class="product-card">
+              <div class="product-image">
+                <img src="{{ url_for('static', filename='images/products/airpods.jpg') }}" alt="Apple AirPods Pro">
+                <div class="product-badge">10% OFF</div>
+                <button class="wishlist-button">
+                  <i class="far fa-heart"></i>
+                </button>
+              </div>
+              <div class="product-info">
+                <div class="product-category">Audio</div>
+                <h3 class="product-title">Apple AirPods Pro - Noise Cancelling</h3>
+                <div class="product-price">
+                  <span class="current-price">$179</span>
+                  <span class="original-price">$199</span>
+                </div>
+                <div class="product-meta">
+                  <div class="product-rating">
+                    <i class="fas fa-star"></i>
+                    <span>4.6 (37)</span>
+                  </div>
+                  <div class="product-time">
+                    <i class="far fa-clock"></i>
+                    <span>Posted 2 days ago</span>
+                  </div>
+                </div>
+              </div>
+              <a href="/products/6" class="product-link"></a>
+            </div>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="pagination">
+            <a href="#" class="pagination-arrow disabled">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+            <a href="#" class="pagination-number active">1</a>
+            <a href="#" class="pagination-number">2</a>
+            <a href="#" class="pagination-number">3</a>
+            <span class="pagination-ellipsis">...</span>
+            <a href="#" class="pagination-number">8</a>
+            <a href="#" class="pagination-arrow">
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+    
+    <!-- Include footer -->
+    {% include 'footer.html' %}
+  </div>
+  
+  <!-- Mobile filters overlay -->
+  <div class="mobile-filters-overlay"></div>
+  
+  <!-- JavaScript for filter functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Mobile filter toggle
+      const filterToggleButton = document.querySelector('.filter-toggle-button');
+      const filtersSidebar = document.querySelector('.filters-sidebar');
+      const mobileFiltersOverlay = document.querySelector('.mobile-filters-overlay');
+      const applyFiltersButton = document.querySelector('.apply-filters-button');
+      const clearFiltersButton = document.querySelector('.clear-filters-button');
+      
+      // Toggle mobile filters
+      if (filterToggleButton && filtersSidebar && mobileFiltersOverlay) {
+        filterToggleButton.addEventListener('click', function() {
+          filtersSidebar.classList.toggle('active');
+          mobileFiltersOverlay.classList.toggle('active');
+          document.body.classList.toggle('no-scroll');
+        });
+        
+        mobileFiltersOverlay.addEventListener('click', function() {
+          filtersSidebar.classList.remove('active');
+          mobileFiltersOverlay.classList.remove('active');
+          document.body.classList.remove('no-scroll');
+        });
+        
+        // Apply filters (mobile)
+        if (applyFiltersButton) {
+          applyFiltersButton.addEventListener('click', function() {
+            filtersSidebar.classList.remove('active');
+            mobileFiltersOverlay.classList.remove('active');
+            document.body.classList.remove('no-scroll');
+            // Here you would also apply the filters and reload products
+          });
+        }
+        
+        // Clear filters (mobile)
+        if (clearFiltersButton) {
+          clearFiltersButton.addEventListener('click', function() {
+            // Reset all filter inputs
+            document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+              input.checked = false;
+            });
+            
+            document.getElementById('min-price').value = '';
+            document.getElementById('max-price').value = '';
+            
+            // You would also clear URL parameters and reload products
+          });
+        }
+      }
+      
+      // Sort functionality
+      const sortSelect = document.getElementById('sort-by');
+      if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+          // Here you would apply the sorting and reload products
+          console.log('Sort changed to:', this.value);
+        });
+      }
+      
+      // Price range filter
+      const applyPriceButton = document.querySelector('.apply-price-button');
+      if (applyPriceButton) {
+        applyPriceButton.addEventListener('click', function() {
+          const minPrice = document.getElementById('min-price').value;
+          const maxPrice = document.getElementById('max-price').value;
+          // Here you would apply the price filter and reload products
+          console.log('Price range:', minPrice, 'to', maxPrice);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

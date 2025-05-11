@@ -1,0 +1,62 @@
+<nav class="header-nav">
+    <a href="/" class="logo">𝙎𝙚𝙘𝙤𝙣𝙙𝙇𝙞𝙛𝙚</a>
+    
+    <!-- Mobile menu toggle button -->
+    <button class="mobile-menu-toggle" aria-label="Toggle navigation menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    
+    <div class="nav-links" id="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/products" class="nav-link">Browse Products</a>
+      <a href="/sell" class="nav-link">Sell an Item</a>
+      <a href="/messages" class="nav-link">Messages</a>
+      <a href="/account" class="nav-link">My Account</a>
+    </div>
+    
+    <div class="user-controls">
+      {% if current_user.is_authenticated %}
+        <span class="welcome-message">Welcome, {{ current_user.username }}!</span>
+        <a href="{{ url_for('logout') }}" class="logout-button">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      {% else %}
+        <span class="welcome-message">Guest Mode</span>
+        <a href="{{ url_for('login') }}" class="login-button">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </a>
+      {% endif %}
+    </div>
+  </nav>
+  
+  <!-- Add this JavaScript at the end of your body tag -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get the mobile menu toggle button and navigation links
+      const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+      const navLinks = document.getElementById('nav-links');
+      
+      // Toggle navigation links on mobile when the button is clicked
+      if (mobileMenuToggle && navLinks) {
+        mobileMenuToggle.addEventListener('click', function() {
+          navLinks.classList.toggle('active');
+        });
+      }
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', function(event) {
+        if (!event.target.closest('.nav-links') && 
+            !event.target.closest('.mobile-menu-toggle') && 
+            navLinks.classList.contains('active')) {
+          navLinks.classList.remove('active');
+        }
+      });
+      
+      // Close menu when window is resized to desktop size
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && navLinks.classList.contains('active')) {
+          navLinks.classList.remove('active');
+        }
+      });
+    });
+  </script>
