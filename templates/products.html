@@ -143,203 +143,45 @@
             </div>
 
             <div class="products-grid">
-              <!-- Product card 1 -->
+              {% for product in products %}
               <div class="product-card">
                 <div class="product-image">
                   <img
-                    src="{{ url_for('static', filename='images/products/iphone.jpg') }}"
-                    alt="iPhone 12"
+                    src="{{ url_for('static', filename='uploads/product_images/' + product.main_photo) }}"
+                    alt="{{ product.title }}"
                   />
-                  <div class="product-badge">15% OFF</div>
+                  <!--
+                  <div class="product-badge">
+                    {{ product.status|capitalize }}
+                  </div>
+                  -->
                   <button class="wishlist-button">
                     <i class="far fa-heart"></i>
                   </button>
                 </div>
                 <div class="product-info">
-                  <div class="product-category">Smartphones</div>
-                  <h3 class="product-title">iPhone 12 Pro - 128GB</h3>
+                  <div class="product-category">
+                    {{ product.category|capitalize }}
+                  </div>
+                  <h3 class="product-title">{{ product.title }}</h3>
                   <div class="product-price">
-                    <span class="current-price">$649</span>
-                    <span class="original-price">$799</span>
+                    <span class="current-price">${{ product.price }}</span>
                   </div>
                   <div class="product-meta">
-                    <div class="product-rating">
-                      <i class="fas fa-star"></i>
-                      <span>4.8 (45)</span>
-                    </div>
+                    <div class="product-brand">{{ product.brand }}</div>
                     <div class="product-time">
                       <i class="far fa-clock"></i>
-                      <span>Posted 2 days ago</span>
+                      <span>Model Year: {{ product.year }}</span>
                     </div>
                   </div>
                 </div>
-                <a href="/products/1" class="product-link"></a>
+                <a href="/products/{{ product.id }}" class="product-link"></a>
               </div>
-
-              <!-- Product card 2 -->
-              <div class="product-card">
-                <div class="product-image">
-                  <img
-                    src="{{ url_for('static', filename='images/products/macbook.jpg') }}"
-                    alt="MacBook Pro"
-                  />
-                  <div class="product-badge">Like New</div>
-                  <button class="wishlist-button">
-                    <i class="far fa-heart"></i>
-                  </button>
-                </div>
-                <div class="product-info">
-                  <div class="product-category">Laptops</div>
-                  <h3 class="product-title">MacBook Pro 2021 - M1 Pro</h3>
-                  <div class="product-price">
-                    <span class="current-price">$1,499</span>
-                    <span class="original-price">$1,999</span>
-                  </div>
-                  <div class="product-meta">
-                    <div class="product-rating">
-                      <i class="fas fa-star"></i>
-                      <span>4.9 (32)</span>
-                    </div>
-                    <div class="product-time">
-                      <i class="far fa-clock"></i>
-                      <span>Posted 1 week ago</span>
-                    </div>
-                  </div>
-                </div>
-                <a href="/products/2" class="product-link"></a>
+              {% else %}
+              <div class="no-results">
+                <p>No products found matching your criteria</p>
               </div>
-
-              <!-- Product card 3 -->
-              <div class="product-card">
-                <div class="product-image">
-                  <img
-                    src="{{ url_for('static', filename='images/products/headphones.jpg') }}"
-                    alt="Sony Headphones"
-                  />
-                  <button class="wishlist-button">
-                    <i class="far fa-heart"></i>
-                  </button>
-                </div>
-                <div class="product-info">
-                  <div class="product-category">Audio</div>
-                  <h3 class="product-title">Sony WH-1000XM4 Headphones</h3>
-                  <div class="product-price">
-                    <span class="current-price">$229</span>
-                    <span class="original-price">$349</span>
-                  </div>
-                  <div class="product-meta">
-                    <div class="product-rating">
-                      <i class="fas fa-star"></i>
-                      <span>4.7 (56)</span>
-                    </div>
-                    <div class="product-time">
-                      <i class="far fa-clock"></i>
-                      <span>Posted 3 days ago</span>
-                    </div>
-                  </div>
-                </div>
-                <a href="/products/3" class="product-link"></a>
-              </div>
-
-              <!-- Product card 4 -->
-              <div class="product-card">
-                <div class="product-image">
-                  <img
-                    src="{{ url_for('static', filename='images/products/ipad.jpg') }}"
-                    alt="iPad Pro"
-                  />
-                  <div class="product-badge">20% OFF</div>
-                  <button class="wishlist-button">
-                    <i class="far fa-heart"></i>
-                  </button>
-                </div>
-                <div class="product-info">
-                  <div class="product-category">Tablets</div>
-                  <h3 class="product-title">iPad Pro 12.9" - 256GB</h3>
-                  <div class="product-price">
-                    <span class="current-price">$849</span>
-                    <span class="original-price">$1,099</span>
-                  </div>
-                  <div class="product-meta">
-                    <div class="product-rating">
-                      <i class="fas fa-star"></i>
-                      <span>4.9 (28)</span>
-                    </div>
-                    <div class="product-time">
-                      <i class="far fa-clock"></i>
-                      <span>Posted 1 day ago</span>
-                    </div>
-                  </div>
-                </div>
-                <a href="/products/4" class="product-link"></a>
-              </div>
-
-              <!-- Product card 5 -->
-              <div class="product-card">
-                <div class="product-image">
-                  <img
-                    src="{{ url_for('static', filename='images/products/camera.jpg') }}"
-                    alt="Sony Alpha A7 III"
-                  />
-                  <button class="wishlist-button">
-                    <i class="far fa-heart"></i>
-                  </button>
-                </div>
-                <div class="product-info">
-                  <div class="product-category">Cameras</div>
-                  <h3 class="product-title">Sony Alpha A7 III - Full Frame</h3>
-                  <div class="product-price">
-                    <span class="current-price">$1,799</span>
-                    <span class="original-price">$2,199</span>
-                  </div>
-                  <div class="product-meta">
-                    <div class="product-rating">
-                      <i class="fas fa-star"></i>
-                      <span>4.8 (19)</span>
-                    </div>
-                    <div class="product-time">
-                      <i class="far fa-clock"></i>
-                      <span>Posted 5 days ago</span>
-                    </div>
-                  </div>
-                </div>
-                <a href="/products/5" class="product-link"></a>
-              </div>
-
-              <!-- Product card 6 -->
-              <div class="product-card">
-                <div class="product-image">
-                  <img
-                    src="{{ url_for('static', filename='images/products/airpods.jpg') }}"
-                    alt="Apple AirPods Pro"
-                  />
-                  <div class="product-badge">10% OFF</div>
-                  <button class="wishlist-button">
-                    <i class="far fa-heart"></i>
-                  </button>
-                </div>
-                <div class="product-info">
-                  <div class="product-category">Audio</div>
-                  <h3 class="product-title">
-                    Apple AirPods Pro - Noise Cancelling
-                  </h3>
-                  <div class="product-price">
-                    <span class="current-price">$179</span>
-                    <span class="original-price">$199</span>
-                  </div>
-                  <div class="product-meta">
-                    <div class="product-rating">
-                      <i class="fas fa-star"></i>
-                      <span>4.6 (37)</span>
-                    </div>
-                    <div class="product-time">
-                      <i class="far fa-clock"></i>
-                      <span>Posted 2 days ago</span>
-                    </div>
-                  </div>
-                </div>
-                <a href="/products/6" class="product-link"></a>
-              </div>
+              {% endfor %}
             </div>
 
             <!-- Pagination -->
