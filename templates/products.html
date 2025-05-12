@@ -126,14 +126,22 @@
                 >
                 {% endif %}
               </div>
+
               <div class="sorting-options">
-                <label for="sort-by">Sort by:</label>
-                <select id="sort-by" class="sort-select">
-                  <option value="newest">Newest First</option>
-                  <option value="price_low">Price: Low to High</option>
-                  <option value="price_high">Price: High to Low</option>
-                  <option value="popular">Most Popular</option>
-                </select>
+              <select id="sort-by" class="sort-select">
+                <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>
+                  Newest First
+                </option>
+                <option value="oldest" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>
+                  Oldest First
+                </option>
+                <option value="price_low" {% if request.args.get('sort') == 'price_low' %}selected{% endif %}>
+                  Price: Low to High
+                </option>
+                <option value="price_high" {% if request.args.get('sort') == 'price_high' %}selected{% endif %}>
+                  Price: High to Low
+                </option>
+              </select>
               </div>
 
               <!-- Mobile filter toggle -->
@@ -150,11 +158,7 @@
                     src="{{ url_for('static', filename='uploads/product_images/' + product.main_photo) }}"
                     alt="{{ product.title }}"
                   />
-                  <!--
-                  <div class="product-badge">
-                    {{ product.status|capitalize }}
-                  </div>
-                  -->
+
                   <button class="wishlist-button">
                     <i class="far fa-heart"></i>
                   </button>
@@ -182,21 +186,6 @@
                 <p>No products found matching your criteria</p>
               </div>
               {% endfor %}
-            </div>
-
-            <!-- Pagination -->
-            <div class="pagination">
-              <a href="#" class="pagination-arrow disabled">
-                <i class="fas fa-chevron-left"></i>
-              </a>
-              <a href="#" class="pagination-number active">1</a>
-              <a href="#" class="pagination-number">2</a>
-              <a href="#" class="pagination-number">3</a>
-              <span class="pagination-ellipsis">...</span>
-              <a href="#" class="pagination-number">8</a>
-              <a href="#" class="pagination-arrow">
-                <i class="fas fa-chevron-right"></i>
-              </a>
             </div>
           </div>
         </div>
@@ -278,8 +267,10 @@
         const sortSelect = document.getElementById("sort-by");
         if (sortSelect) {
           sortSelect.addEventListener("change", function () {
-            // Here you would apply the sorting and reload products
-            console.log("Sort changed to:", this.value);
+            const selectedSort = this.value;
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set("sort", selectedSort);
+            window.location.search = urlParams.toString();
           });
         }
       });
