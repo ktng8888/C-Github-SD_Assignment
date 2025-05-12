@@ -1,349 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SecondLife - Premium Second-Hand Electronics</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='header.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='footer.css') }}">
-</head>
-<body>
-  <div class="main-container">
-    <!-- Include header -->
-    {% include 'header.html' %}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SecondLife - Premium Second-Hand Electronics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='main.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='header.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='footer.css') }}"
+    />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Include header -->
+      {% include 'header.html' %}
 
-    <div class="hero-section">
-      <img src="{{ url_for('static', filename='images/second_electronic.jpg') }}" alt="Electronics" class="hero-image">
-      <div class="hero-overlay"></div>
-      <div class="hero-container">
-        <div class="hero-content">
-          <h1 class="hero-title">World's Premier<br>Second-Hand<br>Electronics<br>Marketplace</h1>
-          <p class="hero-subtitle">Discover amazing deals on pre-owned electronics, where sustainability meets smart shopping</p>
-          <div class="hero-buttons">
-            <a href="/products" class="hero-button primary">
-              <i class="fas fa-search"></i> Browse Products
-            </a>
-            <a href="/sell" class="hero-button secondary">
-              <i class="fas fa-tag"></i> Sell an Item
-            </a>
+      <div class="hero-section">
+        <img
+          src="{{ url_for('static', filename='images/second_electronic.jpg') }}"
+          alt="Electronics"
+          class="hero-image"
+        />
+        <div class="hero-overlay"></div>
+        <div class="hero-container">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              World's Premier<br />Second-Hand<br />Electronics<br />Marketplace
+            </h1>
+            <p class="hero-subtitle">
+              Discover amazing deals on pre-owned electronics, where
+              sustainability meets smart shopping
+            </p>
+            <div class="hero-buttons">
+              <a href="/products" class="hero-button primary">
+                <i class="fas fa-search"></i> Browse Products
+              </a>
+              <a href="/sell" class="hero-button secondary">
+                <i class="fas fa-tag"></i> Sell an Item
+              </a>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Main content area -->
+      <div class="content-area">
+        <!-- Main navigation cards -->
+        <nav class="main-nav">
+          <ul>
+            <li>
+              <a
+                href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('products') }}"
+                class="nav-button"
+              >
+                <div class="nav-icon">
+                  <i class="fas fa-search"></i>
+                </div>
+                <div class="nav-text">Browse Products</div>
+                <div class="nav-description">
+                  Find great deals on electronics
+                </div>
+              </a>
+            </li>
+            <li>
+              <a
+                href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('sell') }}"
+                class="nav-button"
+              >
+                <div class="nav-icon">
+                  <i class="fas fa-tag"></i>
+                </div>
+                <div class="nav-text">Sell an Item</div>
+                <div class="nav-description">
+                  List your electronics for sale
+                </div>
+              </a>
+            </li>
+            <li>
+              <a
+                href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('messages') }}"
+                class="nav-button"
+              >
+                <div class="nav-icon">
+                  <i class="fas fa-envelope"></i>
+                </div>
+                <div class="nav-text">Messages</div>
+                <div class="nav-description">Chat with buyers and sellers</div>
+              </a>
+            </li>
+            <li>
+              <a
+                href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('account') }}"
+                class="nav-button"
+              >
+                <div class="nav-icon">
+                  <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="nav-text">My Account</div>
+                <div class="nav-description">
+                  Manage your profile and listings
+                </div>
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Featured products section -->
+        <section class="featured-products">
+          <div class="section-title">
+            Featured Products
+            <a href="{{ url_for('products') }}" class="view-all">
+              View All <i class="fas fa-arrow-right"></i>
+            </a>
+          </div>
+
+          <div class="products-grid">
+            {% if featured_products %} {% for product in featured_products %}
+            <div class="product-card">
+              <div class="product-image">
+                {% if product.main_photo %}
+                <img
+                  src="{{ url_for('static', filename='uploads/product_images/' + product.main_photo) }}"
+                  alt="{{ product.title }}"
+                />
+                {% else %}
+                <div class="no-image-placeholder">
+                  <i class="fas fa-camera"></i>
+                </div>
+                {% endif %}
+                <button class="wishlist-button">
+                  <i class="far fa-heart"></i>
+                </button>
+              </div>
+              <div class="product-info">
+                <div class="product-category">
+                  {{ product['category']|capitalize }}
+                </div>
+                <h3 class="product-title">{{ product['title'] }}</h3>
+                <div class="product-price">
+                  <span class="current-price"
+                    >RM {{ "%.2f"|format(product['price']|float) }}</span
+                  >
+                </div>
+                <div class="product-meta">
+                  <div class="product-brand">{{ product['brand'] }}</div>
+                </div>
+              </div>
+              <a href="/products/{{ product['id'] }}" class="product-link"></a>
+            </div>
+            {% endfor %} {% else %}
+            <div class="no-results">
+              <p>No featured products available</p>
+            </div>
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- Quick actions section -->
+        <div class="quick-actions">
+          <h3 class="section-title">Quick Actions</h3>
+          <div class="action-buttons">
+            <button class="action-button">
+              <div class="action-icon">
+                <i class="fas fa-history"></i>
+              </div>
+              <div class="action-content">
+                <div class="action-title">Recent Views</div>
+                <div class="action-description">
+                  See products you've viewed recently
+                </div>
+              </div>
+            </button>
+
+            <button class="action-button">
+              <div class="action-icon">
+                <i class="fas fa-heart"></i>
+              </div>
+              <div class="action-content">
+                <div class="action-title">Saved Items</div>
+                <div class="action-description">
+                  Access your wishlist and favorites
+                </div>
+              </div>
+            </button>
+
+            <button class="action-button">
+              <div class="action-icon">
+                <i class="fas fa-shopping-bag"></i>
+              </div>
+              <div class="action-content">
+                <div class="action-title">Purchase History</div>
+                <div class="action-description">
+                  Track orders and view past purchases
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent activity section -->
+        <div class="recent-activity">
+          <h3 class="section-title">Your Recent Activity</h3>
+          <div class="activity-list">
+            <div class="activity-item">
+              <div class="activity-icon">
+                <i class="fas fa-eye"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">iPhone 12</div>
+                <div class="activity-meta">
+                  <span class="activity-time">
+                    <i class="far fa-clock"></i> Viewed 2 days ago
+                  </span>
+                </div>
+              </div>
+              <a href="#" class="activity-action">
+                View Again <i class="fas fa-arrow-right"></i>
+              </a>
+            </div>
+
+            <div class="activity-item">
+              <div class="activity-icon">
+                <i class="fas fa-bookmark"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">MacBook Pro 2020</div>
+                <div class="activity-meta">
+                  <span class="activity-time">
+                    <i class="far fa-clock"></i> Saved 4 days ago
+                  </span>
+                </div>
+              </div>
+              <a href="#" class="activity-action">
+                View Item <i class="fas fa-arrow-right"></i>
+              </a>
+            </div>
+
+            <div class="activity-item">
+              <div class="activity-icon">
+                <i class="fas fa-shopping-cart"></i>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">Sony Headphones</div>
+                <div class="activity-meta">
+                  <span class="activity-time">
+                    <i class="far fa-clock"></i> Purchased 1 week ago
+                  </span>
+                </div>
+              </div>
+              <a href="#" class="activity-action">
+                Track Order <i class="fas fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Why choose us section -->
+        <section class="why-choose-us">
+          <h3 class="section-title">Why Choose SecondLife</h3>
+
+          <div class="benefits-grid">
+            <div class="benefit-item">
+              <div class="benefit-icon">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <h4 class="benefit-title">Verified Sellers</h4>
+              <p class="benefit-description">
+                Every seller on our platform is verified to ensure secure and
+                reliable transactions.
+              </p>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <h4 class="benefit-title">Quality Guaranteed</h4>
+              <p class="benefit-description">
+                Each product is tested and rated on condition before listing to
+                ensure quality standards.
+              </p>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon">
+                <i class="fas fa-leaf"></i>
+              </div>
+              <h4 class="benefit-title">Eco-Friendly</h4>
+              <p class="benefit-description">
+                Giving electronics a second life reduces e-waste and contributes
+                to a greener planet.
+              </p>
+            </div>
+
+            <div class="benefit-item">
+              <div class="benefit-icon">
+                <i class="fas fa-wallet"></i>
+              </div>
+              <h4 class="benefit-title">Secure Payments</h4>
+              <p class="benefit-description">
+                Our secure payment system protects both buyers and sellers
+                throughout transactions.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Include footer -->
+      {% include 'footer.html' %}
     </div>
-    
-    <!-- Main content area -->
-    <div class="content-area">
-      <!-- Main navigation cards -->
-      <nav class="main-nav">
-        <ul>
-          <li>
-            <a href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('products') }}" 
-               class="nav-button">
-               <div class="nav-icon">
-                 <i class="fas fa-search"></i>
-               </div>
-               <div class="nav-text">Browse Products</div>
-               <div class="nav-description">Find great deals on electronics</div>
-            </a>
-          </li>
-          <li>
-            <a href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('sell') }}" 
-               class="nav-button">
-               <div class="nav-icon">
-                 <i class="fas fa-tag"></i>
-               </div>
-               <div class="nav-text">Sell an Item</div>
-               <div class="nav-description">List your electronics for sale</div>
-            </a>
-          </li>
-          <li>
-            <a href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('messages') }}" 
-               class="nav-button">
-               <div class="nav-icon">
-                 <i class="fas fa-envelope"></i>
-               </div>
-               <div class="nav-text">Messages</div>
-               <div class="nav-description">Chat with buyers and sellers</div>
-            </a>
-          </li>
-          <li>
-            <a href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('account') }}" 
-               class="nav-button">
-               <div class="nav-icon">
-                 <i class="fas fa-user-circle"></i>
-               </div>
-               <div class="nav-text">My Account</div>
-               <div class="nav-description">Manage your profile and listings</div>
-            </a>
-          </li>
-        </ul>
-      </nav>
-      
-      <!-- Featured products section -->
-      <section class="featured-products">
-        <div class="section-title">
-          Featured Products
-          <a href="#" class="view-all">
-            View All <i class="fas fa-arrow-right"></i>
-          </a>
-        </div>
-        
-        <div class="products-grid">
-          <!-- Product card 1 -->
-          <div class="product-card">
-            <div class="product-image">
-              <img src="/api/placeholder/300/200" alt="iPhone 12">
-              <div class="product-badge">15% OFF</div>
-              <button class="wishlist-button">
-                <i class="far fa-heart"></i>
-              </button>
-            </div>
-            <div class="product-info">
-              <div class="product-category">Smartphones</div>
-              <h3 class="product-title">iPhone 12 Pro - 128GB</h3>
-              <div class="product-price">
-                <span class="current-price">$649</span>
-                <span class="original-price">$799</span>
-              </div>
-              <div class="product-meta">
-                <div class="product-rating">
-                  <i class="fas fa-star"></i>
-                  <span>4.8 (45)</span>
-                </div>
-                <div class="product-time">
-                  <i class="far fa-clock"></i>
-                  <span>Posted 2 days ago</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Product card 2 -->
-          <div class="product-card">
-            <div class="product-image">
-              <img src="/api/placeholder/300/200" alt="MacBook Pro">
-              <div class="product-badge">Like New</div>
-              <button class="wishlist-button">
-                <i class="far fa-heart"></i>
-              </button>
-            </div>
-            <div class="product-info">
-              <div class="product-category">Laptops</div>
-              <h3 class="product-title">MacBook Pro 2021 - M1 Pro</h3>
-              <div class="product-price">
-                <span class="current-price">$1,499</span>
-                <span class="original-price">$1,999</span>
-              </div>
-              <div class="product-meta">
-                <div class="product-rating">
-                  <i class="fas fa-star"></i>
-                  <span>4.9 (32)</span>
-                </div>
-                <div class="product-time">
-                  <i class="far fa-clock"></i>
-                  <span>Posted 1 week ago</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Product card 3 -->
-          <div class="product-card">
-            <div class="product-image">
-              <img src="/api/placeholder/300/200" alt="Sony Headphones">
-              <button class="wishlist-button">
-                <i class="far fa-heart"></i>
-              </button>
-            </div>
-            <div class="product-info">
-              <div class="product-category">Audio</div>
-              <h3 class="product-title">Sony WH-1000XM4 Headphones</h3>
-              <div class="product-price">
-                <span class="current-price">$229</span>
-                <span class="original-price">$349</span>
-              </div>
-              <div class="product-meta">
-                <div class="product-rating">
-                  <i class="fas fa-star"></i>
-                  <span>4.7 (56)</span>
-                </div>
-                <div class="product-time">
-                  <i class="far fa-clock"></i>
-                  <span>Posted 3 days ago</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Product card 4 -->
-          <div class="product-card">
-            <div class="product-image">
-              <img src="/api/placeholder/300/200" alt="iPad Pro">
-              <div class="product-badge">20% OFF</div>
-              <button class="wishlist-button">
-                <i class="far fa-heart"></i>
-              </button>
-            </div>
-            <div class="product-info">
-              <div class="product-category">Tablets</div>
-              <h3 class="product-title">iPad Pro 12.9" - 256GB</h3>
-              <div class="product-price">
-                <span class="current-price">$849</span>
-                <span class="original-price">$1,099</span>
-              </div>
-              <div class="product-meta">
-                <div class="product-rating">
-                  <i class="fas fa-star"></i>
-                  <span>4.9 (28)</span>
-                </div>
-                <div class="product-time">
-                  <i class="far fa-clock"></i>
-                  <span>Posted 1 day ago</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      <!-- Quick actions section -->
-      <div class="quick-actions">
-        <h3 class="section-title">Quick Actions</h3>
-        <div class="action-buttons">
-          <button class="action-button">
-            <div class="action-icon">
-              <i class="fas fa-history"></i>
-            </div>
-            <div class="action-content">
-              <div class="action-title">Recent Views</div>
-              <div class="action-description">See products you've viewed recently</div>
-            </div>
-          </button>
-          
-          <button class="action-button">
-            <div class="action-icon">
-              <i class="fas fa-heart"></i>
-            </div>
-            <div class="action-content">
-              <div class="action-title">Saved Items</div>
-              <div class="action-description">Access your wishlist and favorites</div>
-            </div>
-          </button>
-          
-          <button class="action-button">
-            <div class="action-icon">
-              <i class="fas fa-shopping-bag"></i>
-            </div>
-            <div class="action-content">
-              <div class="action-title">Purchase History</div>
-              <div class="action-description">Track orders and view past purchases</div>
-            </div>
-          </button>
-        </div>
-      </div>
-      
-      <!-- Recent activity section -->
-      <div class="recent-activity">
-        <h3 class="section-title">Your Recent Activity</h3>
-        <div class="activity-list">
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class="fas fa-eye"></i>
-            </div>
-            <div class="activity-content">
-              <div class="activity-title">iPhone 12</div>
-              <div class="activity-meta">
-                <span class="activity-time">
-                  <i class="far fa-clock"></i> Viewed 2 days ago
-                </span>
-              </div>
-            </div>
-            <a href="#" class="activity-action">
-              View Again <i class="fas fa-arrow-right"></i>
-            </a>
-          </div>
-          
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class="fas fa-bookmark"></i>
-            </div>
-            <div class="activity-content">
-              <div class="activity-title">MacBook Pro 2020</div>
-              <div class="activity-meta">
-                <span class="activity-time">
-                  <i class="far fa-clock"></i> Saved 4 days ago
-                </span>
-              </div>
-            </div>
-            <a href="#" class="activity-action">
-              View Item <i class="fas fa-arrow-right"></i>
-            </a>
-          </div>
-          
-          <div class="activity-item">
-            <div class="activity-icon">
-              <i class="fas fa-shopping-cart"></i>
-            </div>
-            <div class="activity-content">
-              <div class="activity-title">Sony Headphones</div>
-              <div class="activity-meta">
-                <span class="activity-time">
-                  <i class="far fa-clock"></i> Purchased 1 week ago
-                </span>
-              </div>
-            </div>
-            <a href="#" class="activity-action">
-              Track Order <i class="fas fa-arrow-right"></i>
-            </a>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Why choose us section -->
-      <section class="why-choose-us">
-        <h3 class="section-title">Why Choose SecondLife</h3>
-        
-        <div class="benefits-grid">
-          <div class="benefit-item">
-            <div class="benefit-icon">
-              <i class="fas fa-shield-alt"></i>
-            </div>
-            <h4 class="benefit-title">Verified Sellers</h4>
-            <p class="benefit-description">Every seller on our platform is verified to ensure secure and reliable transactions.</p>
-          </div>
-          
-          <div class="benefit-item">
-            <div class="benefit-icon">
-              <i class="fas fa-check-circle"></i>
-            </div>
-            <h4 class="benefit-title">Quality Guaranteed</h4>
-            <p class="benefit-description">Each product is tested and rated on condition before listing to ensure quality standards.</p>
-          </div>
-          
-          <div class="benefit-item">
-            <div class="benefit-icon">
-              <i class="fas fa-leaf"></i>
-            </div>
-            <h4 class="benefit-title">Eco-Friendly</h4>
-            <p class="benefit-description">Giving electronics a second life reduces e-waste and contributes to a greener planet.</p>
-          </div>
-          
-          <div class="benefit-item">
-            <div class="benefit-icon">
-              <i class="fas fa-wallet"></i>
-            </div>
-            <h4 class="benefit-title">Secure Payments</h4>
-            <p class="benefit-description">Our secure payment system protects both buyers and sellers throughout transactions.</p>
-          </div>
-        </div>
-      </section>
-    </div>
-    
-    <!-- Include footer -->
-    {% include 'footer.html' %}
-  </div>
-</body>
+  </body>
 </html>

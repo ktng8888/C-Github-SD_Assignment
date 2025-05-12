@@ -31,7 +31,61 @@ def load_user(username):
 
 @app.route('/')
 def main():
-    return render_template('main.html')
+    # Get featured products from products.txt
+    featured_products = []
+    try:
+        with open("databases/products.txt", "r") as file:
+            lines = file.readlines()
+            # Get the 4 most recent products (highest IDs)
+            sorted_lines = sorted(lines, key=lambda line: int(line.strip().split('||')[0]), reverse=True)
+            count = 0
+            
+            for line in sorted_lines:
+                if count >= 5:  # Limit to 4 featured products
+                    break
+                    
+                parts = line.strip().split('||')
+                if len(parts) >= 15:
+                    # Calculate discount and original price for display purposes
+                    # For demonstration, we'll set random discounts between 10-25%
+                    import random
+                    current_price = float(parts[9])
+                    discount_percent = random.randint(10, 25)
+                    original_price = round(current_price / (1 - discount_percent/100), 2)
+                    
+                    # Format the product data
+                    product = {
+                        'id': parts[0],
+                        'seller': parts[1],
+                        'category': parts[2],
+                        'status': parts[3],
+                        'title': parts[4],
+                        'brand': parts[5],
+                        'model': parts[6],
+                        'year': parts[7],
+                        'description': parts[8].strip('"'),
+                        'price': parts[9],
+                        'current_price': current_price,
+                        'original_price': original_price,
+                        'discount_percent': discount_percent,
+                        'shipping_method': parts[10],
+                        'main_photo': parts[13],
+                        # Create a display badge based on discount or condition
+                        'badge': f"{discount_percent}% OFF" if discount_percent > 15 else "Like New",
+                        # Add a random rating
+                        'rating': round(random.uniform(4.5, 5.0), 1),
+                        'review_count': random.randint(10, 60),
+                        # Add a random "posted time"
+                        'posted_time': random.choice(["Posted 1 day ago", "Posted 2 days ago", "Posted 3 days ago", "Posted 1 week ago"])
+                    }
+                    
+                    featured_products.append(product)
+                    count += 1
+    except FileNotFoundError:
+        # If the file doesn't exist, we'll just show empty featured products
+        pass
+    
+    return render_template('main.html', featured_products=featured_products)
 
 @app.route('/products')
 @login_required
