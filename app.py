@@ -1,3 +1,4 @@
+import random 
 import os
 import time
 from flask import Flask, render_template, request, redirect, flash, url_for
@@ -139,6 +140,52 @@ def products():
                          products=products,
                          selected_category=selected_category)
 
+@app.route('/product/<product_id>')
+@login_required
+def product_details(product_id):
+    product = None
+    with open("databases/products.txt", "r") as file:
+        for line in file:
+            parts = line.strip().split('||')
+            if parts[0] == product_id:
+                # Convert prices to floats
+                try:
+                    price = float(parts[9])
+                    original_price = price * 1.15  # 15% markup for demo
+                except ValueError:
+                    price = 0.0
+                    original_price = 0.0
+                
+                product = {
+                    'id': parts[0],
+                    'seller': parts[1],
+                    'category': parts[2],
+                    'status': parts[3],
+                    'title': parts[4],
+                    'brand': parts[5],
+                    'model': parts[6],
+                    'year': parts[7],
+                    'description': parts[8].strip('"'),
+                    'price': "{:,.2f}".format(price),
+                    'original_price': "{:,.2f}".format(original_price),
+                    'discount_percent': round((1 - (price / original_price)) * 100),
+                    'shipping_method': parts[10].replace('_', ' ').title(),
+                    'shipping_cost': parts[11] if len(parts) > 11 else 'Free',
+                    'shipping_paid_by': parts[12] if len(parts) > 12 else 'Seller',
+                    'main_photo': parts[13],
+                    'additional_photos': parts[14:] if len(parts) > 14 else [],
+                    'quantity': parts[15] if len(parts) > 15 else '1',
+                    'ratings': random.randint(1000, 5000),
+                    'sold': random.randint(500, 2000),
+                    'favorites': random.randint(100, 1000)
+                }
+                break
+                
+    if not product:
+        abort(404)
+        
+    return render_template('product_details.html', product=product)
+
 @app.route('/sell', methods=['GET', 'POST'])
 @login_required
 def sell():
@@ -217,7 +264,7 @@ def sell():
         # Flash a success message
         flash("Your listing has been submitted for review!")
         
-        return redirect(url_for('sell'))
+        return redirect(url_for('account_posts', tab='pending'))
     
     # If GET request, just render the template
     return render_template('sell.html')
@@ -227,11 +274,100 @@ def sell():
 def messages():
     return render_template('messages.html')
 
+'''
 @app.route('/account')
 @login_required
 def account():
-    return render_template('account.html')
+    return render_template('account/account.html')
+'''
 
+@app.route('/account')
+@login_required
+def account():
+    return render_template('account/account.html', active_page='profile')
+
+@app.route('/account/profile')
+@login_required
+def account_profile():
+    return render_template('account/account.html', active_page='profile')
+
+@app.route('/account/listings')
+@login_required
+def account_listings():
+    return render_template('account/account.html', active_page='listings')
+
+@app.route('/account/posts')
+@login_required
+def account_posts():
+    # Get the active tab from query parameters, default to 'posted'
+    active_tab = request.args.get('tab', 'posted')
+    
+    # Get user's posted products
+    posted_products = []
+    pending_products = []
+    
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 15 and parts[1] == current_user.id:
+                    product = {
+                        'id': parts[0],
+                        'seller': parts[1],
+                        'category': parts[2],
+                        'status': parts[3],
+                        'title': parts[4],
+                        'brand': parts[5],
+                        'model': parts[6],
+                        'year': parts[7],
+                        'description': parts[8].strip('"'),
+                        'price': parts[9],
+                        'shipping_method': parts[10],
+                        'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg"
+                    }
+                    
+                    if parts[3] == 'approved':
+                        posted_products.append(product)
+                    elif parts[3] == 'pending':
+                        pending_products.append(product)
+    except FileNotFoundError:
+        pass
+    
+    # Sort products by ID in reverse order (newest first)
+    posted_products.sort(key=lambda x: int(x['id']), reverse=True)
+    pending_products.sort(key=lambda x: int(x['id']), reverse=True)
+
+    posted_count = len(posted_products)
+    pending_count = len(pending_products)
+    
+    return render_template('account/account.html', 
+                          active_page='posts',
+                          active_tab=active_tab,
+                          posted_products=posted_products,
+                          pending_products=pending_products,
+                          posted_count=posted_count,
+                          pending_count=pending_count)
+
+@app.route('/account/sold')
+@login_required
+def account_sold():
+    return render_template('account/account.html', active_page='sold')
+
+@app.route('/account/favorites')
+@login_required
+def account_favorites():
+    return render_template('account/account.html', active_page='favorites')
+
+@app.route('/account/purchases')
+@login_required
+def account_purchases():
+    return render_template('account/account.html', active_page='purchases')
+
+@app.route('/account/settings')
+@login_required
+def account_settings():
+    return render_template('account/account.html', active_page='settings')
+    
 @app.route('/require_login')
 def require_login():
     flash("Please login to access this feature")

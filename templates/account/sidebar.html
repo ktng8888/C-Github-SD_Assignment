@@ -1,0 +1,39 @@
+<!-- Sidebar -->
+<div class="sidebar">
+    <ul class="sidebar-menu">
+        <li class="sidebar-menu-item">
+            <a href="{{ url_for('account_profile') }}" {% if active_page == 'profile' %}class="active"{% endif %}>
+                <i class="fas fa-user"></i>
+                <span>My Profile</span>
+            </a>
+        </li>
+        <li class="sidebar-menu-item">
+            <a href="#">
+                <i class="fas fa-box"></i>
+                <span>My Listings</span>
+            </a>
+            <ul class="sidebar-submenu" {% if active_page in ['posts', 'sold'] %}style="display: block;"{% endif %}>
+                <li><a href="{{ url_for('account_posts') }}" {% if active_page == 'posts' %}class="active"{% endif %}>My Posts</a></li>
+                <li><a href="{{ url_for('account_sold') }}" {% if active_page == 'sold' %}class="active"{% endif %}>My Sold Items</a></li>
+            </ul>
+        </li>
+        <li class="sidebar-menu-item">
+            <a href="{{ url_for('account_favorites') }}" {% if active_page == 'favorites' %}class="active"{% endif %}>
+                <i class="fas fa-heart"></i>
+                <span>Favorites</span>
+            </a>
+        </li>
+        <li class="sidebar-menu-item">
+            <a href="{{ url_for('account_purchases') }}" {% if active_page == 'purchases' %}class="active"{% endif %}>
+                <i class="fas fa-shopping-bag"></i>
+                <span>Purchases</span>
+            </a>
+        </li>
+        <li class="sidebar-menu-item">
+            <a href="{{ url_for('account_settings') }}" {% if active_page == 'settings' %}class="active"{% endif %}>
+                <i class="fas fa-cog"></i>
+                <span>Account Settings</span>
+            </a>
+        </li>
+    </ul>
+</div>

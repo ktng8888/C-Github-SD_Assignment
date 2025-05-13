@@ -1,0 +1,421 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+}
+
+.header {
+    background-color: #27ae60;
+    padding: 15px;
+    color: white;
+    display: flex;
+    align-items: center;
+}
+
+.header-logo {
+    font-size: 20px;
+    font-weight: bold;
+    margin-right: 20px;
+}
+
+.search-bar {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    margin-right: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.product-section {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.product-images {
+    width: 40%;
+}
+
+.main-image {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+}
+
+.image-thumbnails {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+}
+
+.thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.thumbnail.active {
+    border: 2px solid #27ae60;
+}
+
+.product-info {
+    width: 60%;
+}
+
+.product-badge {
+    display: inline-block;
+    background-color: #27ae60;
+    color: white;
+    padding: 3px 10px;
+    font-size: 12px;
+    border-radius: 3px;
+    margin-bottom: 10px;
+}
+
+.product-title {
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.product-ratings {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.ratings-stars {
+    color: #ffc107;
+    margin-right: 10px;
+}
+
+.ratings-count, .sold-count {
+    color: #666;
+    margin-right: 20px;
+    border-left: 1px solid #ddd;
+    padding-left: 20px;
+}
+
+.product-price {
+    font-size: 28px;
+    color: #27ae60;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.original-price {
+    color: #999;
+    text-decoration: line-through;
+    font-size: 18px;
+    margin-left: 10px;
+}
+
+.discount-tag {
+    background-color: #27ae60;
+    color: white;
+    padding: 5px 10px;
+    font-size: 14px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    display: inline-block;
+}
+
+.vouchers {
+    margin-bottom: 20px;
+}
+
+.voucher-title {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.voucher-list {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.voucher {
+    border: 1px solid #ddd;
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #27ae60;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.voucher.active {
+    background-color: #27ae60;
+    color: white;
+    border-color: #27ae60;
+}
+
+.info-section {
+    margin-bottom: 20px;
+}
+
+.info-title {
+    color: #666;
+    width: 120px;
+    float: left;
+}
+
+.info-content {
+    margin-left: 120px;
+}
+
+.shipping-info {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 5px;
+}
+
+.shipping-icon {
+    color: #27ae60;
+    margin-right: 10px;
+}
+
+.guarantee-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+}
+
+.guarantee-icon {
+    color: #27ae60;
+    margin-right: 10px;
+}
+
+.color-options, .storage-options {
+    margin-bottom: 20px;
+}
+
+.option-title {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.option-list {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.color-option, .storage-option {
+    border: 1px solid #ddd;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.color-option.active, .storage-option.active {
+    border-color: #27ae60;
+}
+
+.color-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.quantity-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.quantity-title {
+    color: #666;
+    margin-right: 20px;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.quantity-btn {
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.quantity-input {
+    width: 60px;
+    height: 40px;
+    border: none;
+    text-align: center;
+    font-size: 16px;
+}
+
+.available-count {
+    color: #666;
+    margin-left: 20px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.add-to-cart {
+    padding: 12px 20px;
+    background-color: white;
+    border: 1px solid #27ae60;
+    color: #27ae60;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.buy-now {
+    padding: 12px 20px;
+    background-color: #27ae60;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social-share {
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.share-label {
+    margin-right: 15px;
+}
+
+.share-icons {
+    display: flex;
+    gap: 10px;
+}
+
+.share-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+}
+
+.facebook {
+    background-color: #3b5998;
+}
+
+.twitter {
+    background-color: #1da1f2;
+}
+
+.pinterest {
+    background-color: #bd081c;
+}
+
+.messenger {
+    background-color: #0084ff;
+}
+
+.favorite {
+    display: flex;
+    align-items: center;
+    color: #666;
+    margin-left: auto;
+    cursor: pointer;
+}
+
+.favorite-icon {
+    color: #ff6b6b;
+    margin-right: 5px;
+}
+
+.chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #27ae60;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+}
+
+/* Add these styles at the end */
+.product-description {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.specs div {
+    margin: 8px 0;
+    color: #666;
+}
+
+.product-description .option-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #27ae60;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 1000;
+}

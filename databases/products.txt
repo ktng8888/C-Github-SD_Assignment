@@ -17,3 +17,8 @@
 17||Tzenn||audio||pending||2||2||2||2||"2"||12232||local_pickup||||buyer||Tzenn_1747035396_main.jpg||
 18||Tzenn||cameras||pending||camera 1||iphone||iphone 1||2022||"camera"||123456789||local_pickup||0||seller||Tzenn_1747039506_main.jpg||Tzenn_1747039506_0.jpg||Tzenn_1747039506_1.jpg
 19||Tzenn||tablets||pending||tablet||tablet||1||1||"1111"||123||ship_international||112||buyer||Tzenn_1747039642_main.jpg||Tzenn_1747039642_0.jpg
+20||KeanTiong||smartphones||pending||a||a||a||2||"q"||1||local_pickup||||buyer||KeanTiong_1747151291_main.jpg||
+21||KeanTiong||laptops||pending||1||1||1||1||"1"||1||ship_international||1||seller||KeanTiong_1747151400_main.jpg||
+22||KeanTiong||smartphones||pending||1||1||1||1||"1"||1||local_pickup||||buyer||KeanTiong_1747151767_main.jpg||
+23||KeanTiong||audio||pending||1||1||1||1||"1"||1||ship_domestic||11||buyer||KeanTiong_1747151810_main.jpg||KeanTiong_1747151810_0.jpg
+24||Tzenn||cameras||pending||1||1||1||1||"1"||111||ship_domestic||111||buyer||Tzenn_1747153062_main.jpg||

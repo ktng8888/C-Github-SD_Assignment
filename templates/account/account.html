@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SecondLife - Premium Second-Hand Electronics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='main.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='header.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='footer.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='account.css') }}"
+    />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Include header -->
+      {% include 'header.html' %}
+
+      <div class="account-container">
+        {% include 'account/sidebar.html' %}
+
+        <!-- Content Area -->
+        <div class="content-area">
+            {% if active_page == 'profile' %}
+                {% include 'account/my_profile.html' %}
+            {% elif active_page == 'posts' %}
+                {% include 'account/my_posts.html' %}
+            {% elif active_page == 'sold' %}
+                {% include 'account/my_sold_items.html' %}
+            {% elif active_page == 'favorites' %}
+                {% include 'account/favorites.html' %}
+            {% elif active_page == 'purchases' %}
+                {% include 'account/purchases.html' %}
+            {% elif active_page == 'settings' %}
+                {% include 'account/account_settings.html' %}
+            {% else %}
+                {% include 'account/my_profile.html' %}
+            {% endif %}
+        </div>
+      </div>
+
+      <!-- Include footer -->
+      {% include 'footer.html' %}
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Toggle submenu when parent items with submenu are clicked
+        const menuItemsWithSubmenu = document.querySelectorAll(
+          ".sidebar-menu-item > a + .sidebar-submenu"
+        );
+
+        menuItemsWithSubmenu.forEach((submenu) => {
+          const parentLink = submenu.previousElementSibling;
+
+          parentLink.addEventListener("click", function (e) {
+            e.preventDefault();
+            submenu.style.display =
+              submenu.style.display === "block" ? "none" : "block";
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

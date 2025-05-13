@@ -169,7 +169,7 @@
                   </div>
                   <h3 class="product-title">{{ product.title }}</h3>
                   <div class="product-price">
-                    <span class="current-price">RM {{ product.price }}</span>
+                    <span class="current-price">RM {{ "%.2f"|format(product.price|float) }}</span>
                   </div>
                   <div class="product-meta">
                     <div class="product-brand">{{ product.brand }}</div>
@@ -179,7 +179,7 @@
                     </div>
                   </div>
                 </div>
-                <a href="/products/{{ product.id }}" class="product-link"></a>
+                <a href="{{ url_for('product_details', product_id=product.id) }}" class="product-link"></a>
               </div>
               {% else %}
               <div class="no-results">

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ product.title }} - SecondLife</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='main.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='header.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='footer.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='product_details.css') }}"
+    />
+    <style>
+      /* Add these custom styles */
+      .product-section {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+
+      .product-images {
+        width: 40%;
+      }
+
+      .main-image {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+      }
+
+      .image-thumbnails {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+      }
+
+      .thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+        cursor: pointer;
+      }
+
+      .thumbnail.active {
+        border: 2px solid #27ae60;
+      }
+
+      .product-info {
+        width: 60%;
+      }
+
+      .color-options,
+      .storage-options {
+        margin: 20px 0;
+      }
+
+      .option-list {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .color-option,
+      .storage-option {
+        border: 1px solid #ddd;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .color-option.active,
+      .storage-option.active {
+        border-color: #27ae60;
+      }
+
+      .color-swatch {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-container">
+      {% include 'header.html' %}
+
+      <div class="container">
+        <div class="product-section">
+          <div class="product-images">
+            <img
+              src="{{ url_for('static', filename='uploads/product_images/' + product.main_photo) }}"
+              alt="{{ product.title }}"
+              class="main-image"
+            />
+
+            {% if product.additional_photos and product.additional_photos|length
+            > 0 %}
+            <div class="image-thumbnails">
+              <!-- Main photo thumbnail -->
+              <img
+                src="{{ url_for('static', filename='uploads/product_images/' + product.main_photo) }}"
+                alt="Main image"
+                class="thumbnail active"
+              />
+
+              <!-- Additional photo thumbnails -->
+              {% for photo in product.additional_photos %} {% if photo %}
+              <img
+                src="{{ url_for('static', filename='uploads/product_images/' + photo) }}"
+                alt="Thumbnail {{ loop.index }}"
+                class="thumbnail"
+              />
+              {% endif %} {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="product-info">
+            <div class="product-badge">{{ product.status|title }}</div>
+            <h1 class="product-title">{{ product.title }}</h1>
+
+            <div class="product-ratings">
+              <div class="ratings-stars">★★★★★</div>
+              <div class="ratings-count">
+                {{ product.review_count }} Ratings
+              </div>
+              <div class="sold-count">{{ product.sold_count }} Sold</div>
+            </div>
+
+            <div class="product-price">
+              RM{{ product.price }}
+              <span class="original-price">RM{{ product.original_price }}</span>
+            </div>
+
+            <div class="discount-tag">{{ product.discount_percent }}% OFF</div>
+
+            <div class="shipping-info">
+              <div class="info-title">Shipping</div>
+              <div class="info-content">
+                {% if product.shipping_paid_by == 'buyer' and
+                product.shipping_cost != 'Free' %}
+                <p>Cost: RM{{ product.shipping_cost }} (Paid by buyer)</p>
+                {% else %}
+                <p>Free Shipping</p>
+                {% endif %}
+                <p class="shipping-note">
+                  Get a RM5.00 voucher if your order arrives late
+                </p>
+              </div>
+            </div>
+
+            <div class="guarantee-info">
+              <span class="guarantee-icon">✓</span>
+              <div>
+                15 Days Free Returns · 100% Authentic · Free Shipping ·
+                Fulfilled by SecondLife
+              </div>
+            </div>
+
+            <div class="product-description">
+              <h3 class="option-title">Product Description</h3>
+              <p>{{ product.description }}</p>
+              <div class="specs">
+                <div><strong>Brand:</strong> {{ product.brand }}</div>
+                <div><strong>Model:</strong> {{ product.model }}</div>
+                <div><strong>Year:</strong> {{ product.year }}</div>
+                <div><strong>Seller:</strong> {{ product.seller }}</div>
+              </div>
+            </div>
+
+            <div class="quantity-section">
+              <h3 class="option-title">Quantity</h3>
+              <div class="quantity-controls">
+                <button class="quantity-btn">-</button>
+                <input type="text" class="quantity-input" value="1" />
+                <button class="quantity-btn">+</button>
+              </div>
+              <div class="available-count">
+                {{ product.quantity }} pieces available
+              </div>
+            </div>
+
+            <div class="action-buttons">
+              <button class="add-to-cart">Add To Cart</button>
+              <button class="buy-now">Buy Now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-button">Chat</div>
+      {% include 'footer.html' %}
+    </div>
+
+    <script>
+      // Thumbnail interaction
+      document.querySelectorAll(".thumbnail").forEach((thumb) => {
+        thumb.addEventListener("click", function () {
+          document
+            .querySelector(".thumbnail.active")
+            .classList.remove("active");
+          this.classList.add("active");
+          document.querySelector(".main-image").src = this.src;
+        });
+      });
+
+      // Quantity controls
+      document.querySelectorAll(".quantity-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          const input = document.querySelector(".quantity-input");
+          let value = parseInt(input.value);
+
+          if (this.textContent === "+" && value < 100) {
+            value++;
+          } else if (this.textContent === "-" && value > 1) {
+            value--;
+          }
+
+          input.value = value;
+        });
+      });
+    </script>
+  </body>
+</html>

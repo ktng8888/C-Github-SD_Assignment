@@ -33,7 +33,7 @@ body {
 .sidebar {
   width: 250px;
   background: white;
-  padding: 50px 20px 20px 40px;
+  padding: 50px 10px 20px 40px;
   height: calc(100vh - 80px);
   position: sticky;
   top: 80px;
