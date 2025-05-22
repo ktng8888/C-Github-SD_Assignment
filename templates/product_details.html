@@ -25,80 +25,6 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='product_details.css') }}"
     />
-    <style>
-      /* Add these custom styles */
-      .product-section {
-        display: flex;
-        gap: 30px;
-        margin-bottom: 30px;
-      }
-
-      .product-images {
-        width: 40%;
-      }
-
-      .main-image {
-        width: 100%;
-        height: 400px;
-        object-fit: cover;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-      }
-
-      .image-thumbnails {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-      }
-
-      .thumbnail {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        border: 1px solid #ddd;
-        cursor: pointer;
-      }
-
-      .thumbnail.active {
-        border: 2px solid #27ae60;
-      }
-
-      .product-info {
-        width: 60%;
-      }
-
-      .color-options,
-      .storage-options {
-        margin: 20px 0;
-      }
-
-      .option-list {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .color-option,
-      .storage-option {
-        border: 1px solid #ddd;
-        padding: 8px 15px;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-
-      .color-option.active,
-      .storage-option.active {
-        border-color: #27ae60;
-      }
-
-      .color-swatch {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 8px;
-      }
-    </style>
   </head>
   <body>
     <div class="main-container">
@@ -147,36 +73,7 @@
               <div class="sold-count">{{ product.sold_count }} Sold</div>
             </div>
 
-            <div class="product-price">
-              RM{{ product.price }}
-              <span class="original-price">RM{{ product.original_price }}</span>
-            </div>
-
-            <div class="discount-tag">{{ product.discount_percent }}% OFF</div>
-
-            <div class="shipping-info">
-              <div class="info-title">Shipping</div>
-              <div class="info-content">
-                {% if product.shipping_paid_by == 'buyer' and
-                product.shipping_cost != 'Free' %}
-                <p>Cost: RM{{ product.shipping_cost }} (Paid by buyer)</p>
-                {% else %}
-                <p>Free Shipping</p>
-                {% endif %}
-                <p class="shipping-note">
-                  Get a RM5.00 voucher if your order arrives late
-                </p>
-              </div>
-            </div>
-
-            <div class="guarantee-info">
-              <span class="guarantee-icon">✓</span>
-              <div>
-                15 Days Free Returns · 100% Authentic · Free Shipping ·
-                Fulfilled by SecondLife
-              </div>
-            </div>
-
+            <div class="product-price">RM{{ product.price }}</div>
             <div class="product-description">
               <h3 class="option-title">Product Description</h3>
               <p>{{ product.description }}</p>
@@ -187,21 +84,7 @@
                 <div><strong>Seller:</strong> {{ product.seller }}</div>
               </div>
             </div>
-
-            <div class="quantity-section">
-              <h3 class="option-title">Quantity</h3>
-              <div class="quantity-controls">
-                <button class="quantity-btn">-</button>
-                <input type="text" class="quantity-input" value="1" />
-                <button class="quantity-btn">+</button>
-              </div>
-              <div class="available-count">
-                {{ product.quantity }} pieces available
-              </div>
-            </div>
-
             <div class="action-buttons">
-              <button class="add-to-cart">Add To Cart</button>
               <button class="buy-now">Buy Now</button>
             </div>
           </div>
