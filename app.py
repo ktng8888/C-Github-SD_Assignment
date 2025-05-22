@@ -1,6 +1,7 @@
 import random 
 import os
 import time
+from abc import ABC, abstractmethod
 from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -296,6 +297,7 @@ def account_profile():
 def account_listings():
     return render_template('account/account.html', active_page='listings')
 
+'''
 @app.route('/account/posts')
 @login_required
 def account_posts():
@@ -345,6 +347,89 @@ def account_posts():
                           active_tab=active_tab,
                           posted_products=posted_products,
                           pending_products=pending_products,
+                          posted_count=posted_count,
+                          pending_count=pending_count)
+
+                          
+'''
+
+# Define the context to hold product lists
+class ProductContext:
+    def __init__(self):
+        self.posted_products = []
+        self.pending_products = []
+
+# Abstract strategy class
+class ProductStrategy(ABC):
+    @abstractmethod
+    def process(self, product, context: ProductContext):
+        pass
+
+# Concrete strategies for each product status
+class ApprovedStrategy(ProductStrategy):
+    def process(self, product, context: ProductContext):
+        context.posted_products.append(product)
+
+class PendingStrategy(ProductStrategy):
+    def process(self, product, context: ProductContext):
+        context.pending_products.append(product)
+
+# Strategy factory to map statuses to strategies
+class ProductStrategyFactory:
+    _strategies = {
+        'approved': ApprovedStrategy(),
+        'pending': PendingStrategy()
+    }
+
+    @classmethod
+    def get_strategy(cls, status):
+        return cls._strategies.get(status)
+
+# Flask route using the Strategy Pattern
+@app.route('/account/posts')
+@login_required
+def account_posts():
+    active_tab = request.args.get('tab', 'posted')
+    context = ProductContext()
+
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 15 and parts[1] == current_user.id:
+                    product = {
+                        'id': parts[0],
+                        'seller': parts[1],
+                        'category': parts[2],
+                        'status': parts[3],
+                        'title': parts[4],
+                        'brand': parts[5],
+                        'model': parts[6],
+                        'year': parts[7],
+                        'description': parts[8].strip('"'),
+                        'price': parts[9],
+                        'shipping_method': parts[10],
+                        'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg"
+                    }
+                    # Select and execute the appropriate strategy
+                    strategy = ProductStrategyFactory.get_strategy(product['status'])
+                    if strategy:
+                        strategy.process(product, context)
+    except FileNotFoundError:
+        pass
+
+    # Sort products by ID in reverse order
+    context.posted_products.sort(key=lambda x: int(x['id']), reverse=True)
+    context.pending_products.sort(key=lambda x: int(x['id']), reverse=True)
+
+    posted_count = len(context.posted_products)
+    pending_count = len(context.pending_products)
+    
+    return render_template('account/account.html', 
+                          active_page='posts',
+                          active_tab=active_tab,
+                          posted_products=context.posted_products,
+                          pending_products=context.pending_products,
                           posted_count=posted_count,
                           pending_count=pending_count)
 
