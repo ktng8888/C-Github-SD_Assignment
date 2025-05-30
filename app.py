@@ -114,6 +114,9 @@ def products():
     except FileNotFoundError:
         pass
 
+    # Filter to show only approved products
+    # products = [p for p in products if p['status'] == 'approved']
+
     # Filter by category
     selected_category = request.args.get('category')
     if selected_category:
@@ -356,7 +359,7 @@ def account_posts():
 # Define the context to hold product lists
 class ProductContext:
     def __init__(self):
-        self.posted_products = []
+        self.listing_products = []
         self.pending_products = []
 
 # Abstract strategy class
@@ -368,7 +371,7 @@ class ProductStrategy(ABC):
 # Concrete strategies for each product status
 class ApprovedStrategy(ProductStrategy):
     def process(self, product, context: ProductContext):
-        context.posted_products.append(product)
+        context.listing_products.append(product)
 
 class PendingStrategy(ProductStrategy):
     def process(self, product, context: ProductContext):
@@ -389,7 +392,7 @@ class ProductStrategyFactory:
 @app.route('/account/posts')
 @login_required
 def account_posts():
-    active_tab = request.args.get('tab', 'posted')
+    active_tab = request.args.get('tab', 'listing')
     context = ProductContext()
 
     try:
@@ -419,34 +422,226 @@ def account_posts():
         pass
 
     # Sort products by ID in reverse order
-    context.posted_products.sort(key=lambda x: int(x['id']), reverse=True)
+    context.listing_products.sort(key=lambda x: int(x['id']), reverse=True)
     context.pending_products.sort(key=lambda x: int(x['id']), reverse=True)
 
-    posted_count = len(context.posted_products)
+    listing_count = len(context.listing_products)
     pending_count = len(context.pending_products)
     
     return render_template('account/account.html', 
                           active_page='posts',
                           active_tab=active_tab,
-                          posted_products=context.posted_products,
+                          listing_products=context.listing_products,
                           pending_products=context.pending_products,
-                          posted_count=posted_count,
+                          listing_count=listing_count,
                           pending_count=pending_count)
 
 @app.route('/account/sold')
 @login_required
 def account_sold():
-    return render_template('account/account.html', active_page='sold')
+    sold_products = []
+    order_record = {}
+
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                order_id = parts[0]
+                buyer_username = parts[1] 
+                product_id = parts[2]
+                order_date = parts[3]
+                payment_method = parts[4]
+                amount_paid = parts[5]
+                status = parts[6]
+                delivered_date = parts[7] if parts[7] else None
+                
+                order_record[product_id] = {
+                    'order_id': order_id,
+                    'buyer_username': buyer_username,
+                    'order_date': order_date,
+                    'payment_method': payment_method,
+                    'amount_paid': amount_paid,
+                    'status': status,
+                    'delivered_date': delivered_date
+                }
+    except FileNotFoundError:
+        pass
+
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 15 and parts[1] == current_user.id and parts[3] == 'sold':
+                    product_id = parts[0]  # Define product_id here
+                    
+                    if product_id in order_record:
+                        order_info = order_record[product_id]
+                        
+                        product = {
+                            'id': parts[0],
+                            'seller': parts[1],
+                            'category': parts[2],
+                            'status': parts[3],
+                            'title': parts[4],
+                            'brand': parts[5],
+                            'model': parts[6],
+                            'year': parts[7],
+                            'description': parts[8].strip('"'),
+                            'price': parts[9],
+                            'shipping_method': parts[10],
+                            'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg",
+                        
+                            # Add order information
+                            'order_id': order_info['order_id'],
+                            'buyer_username': order_info['buyer_username'],
+                            'order_date': order_info['order_date'],
+                            'payment_method': order_info['payment_method'],
+                            'amount_paid': order_info['amount_paid'],
+                            'order_status': order_info['status'],
+                            'delivered_date': order_info['delivered_date']
+                        }
+                        sold_products.append(product)
+
+    except FileNotFoundError:
+        pass
+    
+    sold_products.sort(key=lambda x: int(x['id']), reverse=True)
+
+    return render_template('account/account.html', active_page='sold', sold_products=sold_products)
 
 @app.route('/account/favorites')
 @login_required
 def account_favorites():
-    return render_template('account/account.html', active_page='favorites')
+    favorite_products = []
+    
+    # Get user's favorite product IDs
+    user_favorites = []
+    try:
+        with open("databases/favorites.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 4 and parts[1] == current_user.id:  # Check if user matches
+                    user_favorites.append(parts[2])  # Add product_id to favorites list
+    except FileNotFoundError:
+        pass
 
-@app.route('/account/purchases')
+    # Get product details for favorited products
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 13:
+                    product_id = parts[0]
+                    
+                    # Only include products that user has favorited
+                    if product_id in user_favorites:
+                        product = {
+                            'id': parts[0],
+                            'seller': parts[1],
+                            'category': parts[2],
+                            'status': parts[3],
+                            'title': parts[4],
+                            'brand': parts[5],
+                            'model': parts[6],
+                            'year': parts[7],
+                            'description': parts[8].strip('"'),
+                            'price': parts[9],
+                            'shipping_method': parts[10],
+                            'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg"
+                        }
+                        favorite_products.append(product)
+    except FileNotFoundError:
+        pass
+    
+    favorite_products.sort(key=lambda x: int(x['id']), reverse=True)
+
+    return render_template('account/account.html', 
+                          active_page='favorites', 
+                          favorite_products=favorite_products)
+
+@app.route('/account/orders')
 @login_required
-def account_purchases():
-    return render_template('account/account.html', active_page='purchases')
+def account_orders():
+    active_tab = request.args.get('tab', 'recent')
+    shipping_orders = []
+    completed_orders = []
+    
+    # First, get all orders for current user
+    user_orders = {}
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 7 and parts[1] == current_user.id:  # user_id matches
+                    product_id = parts[2]
+                    user_orders[product_id] = {
+                        'order_id': parts[0],
+                        'order_date': parts[3],
+                        'payment_method': parts[4],
+                        'amount_paid': parts[5],
+                        'status': parts[6],
+                        'delivered_date': parts[7] if len(parts) > 7 and parts[7] else None
+                    }
+    except FileNotFoundError:
+        pass
+    
+    # Then get product details and combine with order info
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 13:
+                    product_id = parts[0]
+                    
+                    # Only include products that current user has ordered
+                    if product_id in user_orders:
+                        order_info = user_orders[product_id]
+                        
+                        order_product = {
+                            'id': parts[0],
+                            'seller': parts[1],
+                            'category': parts[2],
+                            'title': parts[4],
+                            'brand': parts[5],
+                            'model': parts[6],
+                            'year': parts[7],
+                            'description': parts[8].strip('"'),
+                            'price': parts[9],
+                            'shipping_method': parts[10],
+                            'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg",
+                            
+                            # Add order information
+                            'order_id': order_info['order_id'],
+                            'order_date': order_info['order_date'],
+                            'payment_method': order_info['payment_method'],
+                            'amount_paid': order_info['amount_paid'],
+                            'order_status': order_info['status'],
+                            'delivered_date': order_info['delivered_date'],
+                            'sold_date': order_info['delivered_date'] if order_info['delivered_date'] else order_info['order_date']
+                        }
+                        
+                        # Sort into appropriate lists based on status
+                        if order_info['status'] == 'shipping':
+                            shipping_orders.append(order_product)
+                        elif order_info['status'] == 'completed':
+                            completed_orders.append(order_product)
+    except FileNotFoundError:
+        pass
+    
+    # Sort orders by order date in reverse order (newest first)
+    shipping_orders.sort(key=lambda x: x['order_date'], reverse=True)
+    completed_orders.sort(key=lambda x: x['order_date'], reverse=True)
+    
+    shipping_orders_count = len(shipping_orders)
+    completed_orders_count = len(completed_orders)
+    
+    return render_template('account/account.html', 
+                          active_page='orders',
+                          active_tab=active_tab,
+                          shipping_orders=shipping_orders,
+                          completed_orders=completed_orders,
+                          shipping_orders_count=shipping_orders_count,
+                          completed_orders_count=completed_orders_count)
 
 @app.route('/account/settings')
 @login_required

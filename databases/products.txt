@@ -1,4 +1,4 @@
-1||KeanTiong||smartphones||pending||Galaxy S25 Ultra||Samsung||Galaxy S25 Ultra||2025||"Still Good Phone "||4000||ship_international||30||buyer||KeanTiong_1746982297_main.jpg||KeanTiong_1746982297_0.jpg
+1||KeanTiong||smartphones||sold||Galaxy S25 Ultra||Samsung||Galaxy S25 Ultra||2025||"Still Good Phone "||4000||ship_international||30||buyer||KeanTiong_1746982297_main.jpg||KeanTiong_1746982297_0.jpg
 2||KeanTiong||laptops||pending|| VULCAN GX||Asus|| VULCAN GX||2024||"Secondhand laptop"||5000||ship_international||20||buyer||KeanTiong_1746982470_main.jpg||
 3||Tzenn||smartphones||pending||Redmi K80 Pro Brand New||redmi||Redmi K80||2024||"This was the brand new Redmi K80 pro phone , which only use for few time and charges for few time only"||2000||ship_international||30||buyer||Tzenn_1747032247_main.jpg||
 4||Tzenn||laptops||pending||1||1||1||1||"1"||1000||ship_domestic||11||buyer||Tzenn_1747035126_main.jpg||

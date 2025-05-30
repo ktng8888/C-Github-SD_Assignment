@@ -3,132 +3,55 @@
 </div>
 
 <div class="tabs-container">
-  <div class="tabs">
-    <div class="tab {% if active_tab == 'recent' or active_tab is not defined %}active{% endif %}" data-tab="recent">
-      Recent Sales ({{ recent_sold_count|default('0') }})
-    </div>
-    <div class="tab {% if active_tab == 'all' %}active{% endif %}" data-tab="all">
-      All Sales ({{ all_sold_count|default('0') }})
-    </div>
-  </div>
   <div class="tab-content">
-    <!-- Recent Sold Products Tab -->
-    <div class="tab-pane {% if active_tab == 'recent' or active_tab is not defined %}active{% endif %}" id="recent-tab" 
-         {% if active_tab == 'all' %}style="display: none;"{% endif %}>
-      {% if recent_sold_products and recent_sold_products|length > 0 %}
-      <div class="product-grid">
-        {% for product in recent_sold_products %}
+    {% if sold_products and sold_products|length > 0 %}
+    <div class="product-grid">
+        {% for product in sold_products %}
         <div class="product-card">
-          <div class="product-image">
+            <div class="product-image">
             <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
-            <div class="sold-badge">SOLD</div>
-          </div>
-          <div class="product-details">
+            <div class="sold-badge">💰Sold</div>
+            </div>
+            <div class="product-details">
             <div class="product-title">{{ product.title }}</div>
             <div class="product-price">${{ product.price }}</div>
             <div class="product-sale-date">
-              <i class="fas fa-calendar-alt"></i> 
-              {% if product.sold_date %}
-                Sold on {{ product.sold_date }}
-              {% else %}
-                Recently sold
-              {% endif %}
+                <i class="fas fa-calendar-alt"></i> 
+                {% if product.delivered_date %}
+                    Sold on {{ product.delivered_date }}
+                {% else %}
+                    Order Status: {{ product.order_status }}
+                {% endif %}
             </div>
-            <div class="product-actions">
-              <a href="#" class="action-btn details-btn">
-                <i class="fas fa-info-circle"></i> Details
-              </a>
-              <a href="#" class="action-btn relist-btn">
-                <i class="fas fa-redo"></i> Relist
-              </a>
             </div>
-          </div>
         </div>
         {% endfor %}
-      </div>
-      {% else %}
-      <div class="empty-state">
-        <i class="fas fa-tags"></i>
-        <h3>No recent sales</h3>
-        <p>Your recently sold items will appear here</p>
-      </div>
-      {% endif %}
     </div>
-    
-    <!-- All Sold Products Tab -->
-    <div class="tab-pane {% if active_tab == 'all' %}active{% endif %}" id="all-tab" 
-         {% if active_tab != 'all' %}style="display: none;"{% endif %}>
-      {% if all_sold_products and all_sold_products|length > 0 %}
-      <div class="product-grid">
-        {% for product in all_sold_products %}
-        <div class="product-card">
-          <div class="product-image">
-            <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
-            <div class="sold-badge">SOLD</div>
-          </div>
-          <div class="product-details">
-            <div class="product-title">{{ product.title }}</div>
-            <div class="product-price">${{ product.price }}</div>
-            <div class="product-sale-date">
-              <i class="fas fa-calendar-alt"></i> 
-              {% if product.sold_date %}
-                Sold on {{ product.sold_date }}
-              {% else %}
-                Sold
-              {% endif %}
-            </div>
-            <div class="product-actions">
-              <a href="#" class="action-btn details-btn">
-                <i class="fas fa-info-circle"></i> Details
-              </a>
-              <a href="#" class="action-btn relist-btn">
-                <i class="fas fa-redo"></i> Relist
-              </a>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="empty-state">
+    {% else %}
+    <div class="empty-state">
         <i class="fas fa-tags"></i>
-        <h3>No sales history</h3>
-        <p>Your sales history will appear here</p>
-      </div>
-      {% endif %}
+        <h3>No sold items yet</h3>
+        <p>Your sold items will appear here</p>
     </div>
+    {% endif %}
   </div>
 </div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const tabs = document.querySelectorAll(".tabs .tab");
-    const tabPanes = document.querySelectorAll(".tab-pane");
-    
-    tabs.forEach(tab => {
-      tab.addEventListener("click", function() {
-        // Remove active class from all tabs
-        tabs.forEach(t => t.classList.remove("active"));
-        
-        // Add active class to clicked tab
-        this.classList.add("active");
-        
-        // Hide all tab panes
-        tabPanes.forEach(pane => pane.style.display = "none");
-        
-        // Show the selected tab pane
-        const tabType = this.getAttribute("data-tab");
-        const targetPane = document.getElementById(`${tabType}-tab`);
-        if (targetPane) {
-          targetPane.style.display = "block";
-        }
-      });
-    });
-  });
-</script>
 
 <style>
 .section-header{
     margin-bottom: 20px;
+}
+.sold-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #fce7f3;
+    color: #be185d;
+    padding: 6px 12px;
+    border: 1px solid #fbcfe8;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 </style>

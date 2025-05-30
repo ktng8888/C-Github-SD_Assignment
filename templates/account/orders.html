@@ -1,0 +1,154 @@
+<div class="section-header">
+  <h2>My Orders</h2>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs">
+    <div class="tab {% if active_tab == 'recent' or active_tab is not defined %}active{% endif %}" data-tab="recent">
+      Shipping ({{ shipping_orders_count|default('0') }})
+    </div>
+    <div class="tab {% if active_tab == 'all' %}active{% endif %}" data-tab="all">
+      Completed ({{ completed_orders_count|default('0') }})
+    </div>
+  </div>
+  <div class="tab-content">
+    <!-- Shipping Orders Tab -->
+    <div class="tab-pane {% if active_tab == 'recent' or active_tab is not defined %}active{% endif %}" id="recent-tab" 
+         {% if active_tab == 'all' %}style="display: none;"{% endif %}>
+      {% if shipping_orders and shipping_orders|length > 0 %}
+      <div class="product-grid">
+        {% for order in shipping_orders %}
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ order.main_photo }}" alt="{{ order.title }}" />
+            <div class="shipping-badge">🚚 Shipping</div>
+          </div>
+          <div class="product-details">
+            <div class="product-title">{{ order.title }}</div>
+            <div class="product-price">${{ order.price }}</div>
+            <div class="seller-info">
+              <i class="fas fa-user"></i> Seller: {{ order.seller }}
+            </div>
+            <div class="order-date">
+              <i class="fas fa-calendar-alt"></i> 
+              Ordered on {{ order.order_date }}
+            </div>
+            <div class="payment-method">
+              <i class="fas fa-credit-card"></i> {{ order.payment_method }}
+            </div>
+            <div class="product-actions">
+              <a href="#" class="action-btn details-btn">
+                <i class="fas fa-info-circle"></i> Track Order
+              </a>
+              <a href="#" class="action-btn contact-btn">
+                <i class="fas fa-message"></i> Contact Seller
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-shipping-fast"></i>
+        <h3>No shipping orders</h3>
+        <p>Your shipping orders will appear here</p>
+      </div>
+      {% endif %}
+    </div>
+    
+    <!-- Completed Orders Tab -->
+    <div class="tab-pane {% if active_tab == 'all' %}active{% endif %}" id="all-tab" 
+         {% if active_tab != 'all' %}style="display: none;"{% endif %}>
+      {% if completed_orders and completed_orders|length > 0 %}
+      <div class="product-grid">
+        {% for order in completed_orders %}
+        <div class="product-card">
+          <div class="product-image">
+            <img src="{{ order.main_photo }}" alt="{{ order.title }}" />
+            <div class="completed-badge">✔️ Completed</div>
+          </div>
+          <div class="product-details">
+            <div class="product-title">{{ order.title }}</div>
+            <div class="product-price">${{ order.price }}</div>
+            <div class="seller-info">
+              <i class="fas fa-user"></i> Seller: {{ order.seller }}
+            </div>
+            <div class="delivery-date">
+              <i class="fas fa-calendar-check"></i> 
+              {% if order.delivered_date %}
+                Delivered on {{ order.delivered_date }}
+              {% else %}
+                Completed on {{ order.order_date }}
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-check-circle"></i>
+        <h3>No completed orders</h3>
+        <p>Your completed orders will appear here</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.section-header{
+    margin-bottom: 20px;
+}
+
+.shipping-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #ede9fe;
+    color: #7c3aed;
+    padding: 6px 12px;
+    border: 1px solid #d8b4fe;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.completed-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #d1fae5;
+    color: #059669;
+    padding: 6px 12px;
+    border: 1px solid #a7f3d0;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabs = document.querySelectorAll(".tabs .tab");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+    
+    tabs.forEach(tab => {
+      tab.addEventListener("click", function() {
+        tabs.forEach(t => t.classList.remove("active"));
+        this.classList.add("active");
+        tabPanes.forEach(pane => pane.style.display = "none");
+        
+        const tabType = this.getAttribute("data-tab");
+        const targetPane = document.getElementById(`${tabType}-tab`);
+        if (targetPane) {
+          targetPane.style.display = "block";
+        }
+      });
+    });
+  });
+</script>
