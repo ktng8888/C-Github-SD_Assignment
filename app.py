@@ -268,7 +268,7 @@ def sell():
         # Flash a success message
         flash("Your listing has been submitted for review!")
         
-        return redirect(url_for('account_posts', tab='pending'))
+        return redirect(url_for('account_listings', tab='pending'))
     
     # If GET request, just render the template
     return render_template('sell.html')
@@ -293,12 +293,70 @@ def account():
 @app.route('/account/profile')
 @login_required
 def account_profile():
-    return render_template('account/account.html', active_page='profile')
+    active_tab = request.args.get('tab', 'listing')
+    seller_total_products = [];
+    favorite_products = [];
+    sold_products = [];
 
-@app.route('/account/listings')
-@login_required
-def account_listings():
-    return render_template('account/account.html', active_page='listings')
+    user_favorites = [];
+    try:
+        with open("databases/favorites.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 4 and parts[1] == current_user.id: 
+                    user_favorites.append(parts[2]) 
+    except FileNotFoundError:
+        pass
+
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 13:
+                    product_id = parts[0]
+
+                    product = {
+                        'id': parts[0],
+                        'seller': parts[1],
+                        'category': parts[2],
+                        'status': parts[3],
+                        'title': parts[4],
+                        'brand': parts[5],
+                        'model': parts[6],
+                        'year': parts[7],
+                        'description': parts[8].strip('"'),
+                        'price': parts[9],
+                        'shipping_method': parts[10],
+                        'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg"
+                    }
+
+                    if parts[1] == current_user.id:
+                        seller_total_products.append(product)
+                        if parts[3] == 'sold':
+                            sold_products.append(product);
+                    
+                    if product_id in user_favorites:
+                        favorite_products.append(product)
+    
+    except FileNotFoundError:
+        pass
+    
+    seller_total_products.sort(key=lambda x: int(x['id']), reverse=True)
+    favorite_products.sort(key=lambda x: int(x['id']), reverse=True)
+    sold_products.sort(key=lambda x: int(x['id']), reverse=True)
+
+    seller_total_products_count = len(seller_total_products)
+    favorite_count = len(favorite_products)
+    sold_count = len(favorite_products) 
+
+    return render_template('account/account.html', active_page='profile',
+                           active_tab = active_tab,
+                           seller_total_products = seller_total_products,
+                           favorite_products = favorite_products,
+                           sold_products = sold_products,
+                           seller_total_products_count = seller_total_products_count,
+                           favorite_count = favorite_count,
+                           sold_count = sold_count)
 
 '''
 @app.route('/account/posts')
@@ -389,9 +447,9 @@ class ProductStrategyFactory:
         return cls._strategies.get(status)
 
 # Flask route using the Strategy Pattern
-@app.route('/account/posts')
+@app.route('/account/listings')
 @login_required
-def account_posts():
+def account_listings():
     active_tab = request.args.get('tab', 'listing')
     context = ProductContext()
 
@@ -429,7 +487,7 @@ def account_posts():
     pending_count = len(context.pending_products)
     
     return render_template('account/account.html', 
-                          active_page='posts',
+                          active_page='listings',
                           active_tab=active_tab,
                           listing_products=context.listing_products,
                           pending_products=context.pending_products,
@@ -490,7 +548,8 @@ def account_sold():
                             'price': parts[9],
                             'shipping_method': parts[10],
                             'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg",
-                        
+                            'additional_photos': parts[14:] if len(parts) > 14 else [],
+
                             # Add order information
                             'order_id': order_info['order_id'],
                             'buyer_username': order_info['buyer_username'],
@@ -506,8 +565,11 @@ def account_sold():
         pass
     
     sold_products.sort(key=lambda x: int(x['id']), reverse=True)
+    sold_products_count = len(sold_products)
 
-    return render_template('account/account.html', active_page='sold', sold_products=sold_products)
+    return render_template('account/account.html', active_page='sold',
+                            sold_products=sold_products,
+                            sold_products_count = sold_products_count)
 
 @app.route('/account/favorites')
 @login_required
@@ -554,15 +616,17 @@ def account_favorites():
         pass
     
     favorite_products.sort(key=lambda x: int(x['id']), reverse=True)
+    favorite_products_count = len(favorite_products)
 
     return render_template('account/account.html', 
                           active_page='favorites', 
-                          favorite_products=favorite_products)
+                          favorite_products=favorite_products,
+                          favorite_products_count = favorite_products_count)
 
 @app.route('/account/orders')
 @login_required
 def account_orders():
-    active_tab = request.args.get('tab', 'recent')
+    active_tab = request.args.get('tab', 'shipping')
     shipping_orders = []
     completed_orders = []
     
@@ -642,6 +706,98 @@ def account_orders():
                           completed_orders=completed_orders,
                           shipping_orders_count=shipping_orders_count,
                           completed_orders_count=completed_orders_count)
+
+@app.route('/product/details/<product_id>')
+@login_required
+def product_details_modal(product_id):
+    product = None
+    order_info = None
+    
+    # Get product information first
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 15 and parts[0] == product_id:
+                    product = {
+                        'id': parts[0],
+                        'seller': parts[1],
+                        'category': parts[2],
+                        'status': parts[3],
+                        'title': parts[4],
+                        'brand': parts[5],
+                        'model': parts[6],
+                        'year': parts[7],
+                        'description': parts[8].strip('"'),
+                        'price': float(parts[9]),
+                        'shipping_method': parts[10],
+                        'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg",
+                        'additional_photos': parts[14:] if len(parts) > 14 else [],
+                    }
+                    break
+    except FileNotFoundError:
+        pass
+    
+    if not product:
+        return "Product not found", 404
+    
+    # Check if product is in user's favorites
+    is_favorited = False
+    try:
+        with open("databases/favorites.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 4 and parts[1] == current_user.id and parts[2] == product_id:
+                    is_favorited = True
+                    break
+    except FileNotFoundError:
+        pass
+    
+    # Get order information if the product is sold OR if current user has ordered it
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 7 and parts[2] == product_id:
+                    # Check if this is relevant to current user (either as seller or buyer)
+                    if parts[1] == current_user.id or product['seller'] == current_user.id:
+                        order_info = {
+                            'order_id': parts[0],
+                            'buyer_username': parts[1],
+                            'order_date': parts[3],
+                            'payment_method': parts[4],
+                            'amount_paid': float(parts[5]),
+                            'status': parts[6],
+                            'delivered_date': parts[7] if parts[7] else None
+                        }
+                        break
+    except FileNotFoundError:
+        pass
+    
+    # Add order information to product if available
+    if order_info:
+        product.update({
+            'order_id': order_info['order_id'],
+            'buyer_username': order_info['buyer_username'],
+            'order_date': order_info['order_date'],
+            'payment_method': order_info['payment_method'],
+            'amount_paid': order_info['amount_paid'],
+            'order_status': order_info['status'],
+            'delivered_date': order_info['delivered_date']
+        })
+    
+    # Determine the context based on product status and user relationship
+    context = {
+        'is_seller': product['seller'] == current_user.id,
+        'is_buyer': order_info and order_info['buyer_username'] == current_user.id,
+        'is_sold': product['status'] == 'sold',
+        'is_pending': product['status'] == 'pending',
+        'is_approved': product['status'] == 'approved',
+        'has_order': order_info is not None,
+        'is_favorited': is_favorited
+    }
+    
+    return render_template('account/show_details.html', product=product, context=context)
 
 @app.route('/account/settings')
 @login_required

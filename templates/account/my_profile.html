@@ -21,24 +21,18 @@
             {% endif %}
             </div>
             <div class="profile-meta">
-            Member since {{ current_user.join_date|default('January 2023') }}
+            {{ current_user.email }}
             </div>
             <div class="profile-stats">
             <div class="stat-item">
                 <div class="stat-value">
-                {{ current_user.listings_count|default('28') }}
+                {{ seller_total_products_count|default('0') }}
                 </div>
-                <div class="stat-label">Listings</div>
+                <div class="stat-label">Products</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">
-                {{ current_user.rating|default('4.9') }}
-                </div>
-                <div class="stat-label">Rating</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value">
-                {{ current_user.sold_count|default('82') }}
+                {{ sold_count|default('0') }}
                 </div>
                 <div class="stat-label">Sold</div>
             </div>
@@ -52,82 +46,318 @@
     </div>
 
     <div class="tabs-container">
-    <div class="tabs">
-        <div class="tab active">
-        Listings ({{ current_user.listings_count|default('28') }})
-        </div>
-        <div class="tab">
-        Favorites ({{ current_user.favorites_count|default('14') }})
-        </div>
-        <div class="tab">
-        Reviews ({{ current_user.reviews_count|default('33') }})
-        </div>
-    </div>
-    <div class="tab-content">
-        {% if current_user is defined and current_user.listings|default(true) %}
-        <div class="product-grid">
-        {% for product in current_user.listings|default([ {'id': 1, 'title':
-        'iPhone 13 Pro - 256GB', 'price': 599, 'image_url':
-        '/static/images/product1.jpg'}, {'id': 2, 'title': 'MacBook Air M1 - 8GB
-        RAM', 'price': 749, 'image_url': '/static/images/product2.jpg'}, {'id': 3,
-        'title': 'Samsung Galaxy S21 Ultra', 'price': 499, 'image_url':
-        '/static/images/product3.jpg'}, {'id': 4, 'title': 'Sony WH-1000XM4
-        Headphones', 'price': 199, 'image_url': '/static/images/product4.jpg'},
-        {'id': 5, 'title': 'iPad Pro 11-inch 2021', 'price': 649, 'image_url':
-        '/static/images/product5.jpg'}, {'id': 6, 'title': 'Dell XPS 13 - i7,
-        16GB', 'price': 899, 'image_url': '/static/images/product6.jpg'}, {'id':
-        7, 'title': 'Apple Watch Series 7', 'price': 259, 'image_url':
-        '/static/images/product7.jpg'}, {'id': 8, 'title': 'PlayStation 5 - Disc
-        Edition', 'price': 399, 'image_url': '/static/images/product8.jpg'} ]) %}
-        <div class="product-card">
-            <div class="product-image">
-            <img src="{{ product.image_url }}" alt="{{ product.title }}" />
+        <div class="tabs">
+            <div class="tab {% if active_tab == 'listing' or active_tab is not defined %}active{% endif %}" data-tab="listing">
+            Products ({{seller_total_products_count|default('0') }})
             </div>
-            <div class="product-details">
-            <div class="product-title">{{ product.title }}</div>
-            <div class="product-price">${{ product.price }}</div>
+            <div class="tab {% if active_tab == 'favorite' %}active{% endif %}" data-tab="favorite">
+            Favorites ({{ favorite_count|default('0') }})
+            </div>
+            <div class="tab">
+            Reviews ({{ current_user.reviews_count|default('0') }})
             </div>
         </div>
-        {% endfor %}
+        <div class="tab-content">
+
+            <div class="tab-pane {% if active_tab == 'listing' or active_tab is not defined %}active{% endif %}" id="listing-tab" 
+                {% if active_tab != 'listing' %}style="display: none;"{% endif %}>
+                {% if seller_total_products and seller_total_products|length > 0 %}
+                <div class="product-grid">
+                    {% for product in seller_total_products %}
+                    <div class="product-card" onclick="openProductModal('{{ product.id }}')">
+                    <div class="product-image">
+                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+                        {% if product.status == 'listing' %}
+                            <div class="listing-badge">✅Listing</div>
+                        {% elif product.status == 'pending' %}
+                            <div class="pending-badge">⏳Pending</div>
+                        {% elif product.status == 'sold' %}
+                            <div class="sold-badge">💰Sold</div>
+                        {% endif %}
+                        
+                    </div>
+                    <div class="product-details">
+                        <div class="product-title">{{ product.title }}</div>
+                        <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
+                        <div class="product-status">Status: {{ product.status }}</div>
+                    </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
+                    <h3>No listings yet</h3>
+                    <p>Your listings will appear here</p>
+                </div>
+                {% endif %}
+            </div>
+                
+            <div class="tab-pane {% if active_tab == 'favorite' %}active{% endif %}" id="favorite-tab" 
+                {% if active_tab != 'favorite' %}style="display: none;"{% endif %}>
+                {% if favorite_products and favorite_products|length > 0 %}
+                <div class="product-grid">
+                    {% for product in favorite_products %}
+                    <div class="product-card" onclick="openProductModal('{{ product.id }}')">
+                    <div class="product-image">
+                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+                        <div class="favorite-badge">♥ FAVORITE</div>
+                    </div>
+                    <div class="product-details">
+                        <div class="product-title">{{ product.title }}</div>
+                        <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
+                        <div class="product-status pending-status">Status: {{ product.status }}</div>
+                    </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-hourglass-half"></i>
+                    <h3>No favorite products</h3>
+                    <p>Your favorite products will appear here</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        {% else %}
-        <div class="empty-state">
-        <i class="fas fa-box-open"></i>
-        <h3>No listings yet</h3>
-        <p>Start selling your unused electronics</p>
-        <a href="#" class="btn btn-primary">Create Listing</a>
+    </div>
+
+    <!-- Modal Popup -->
+    <div id="productModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+        <h2 id="modalTitle">Product Details</h2>
+        <span class="close" onclick="closeProductModal()">&times;</span>
         </div>
-        {% endif %}
+        <div class="modal-body">
+        <iframe id="productDetailsFrame" src="" frameborder="0"></iframe>
+        </div>
     </div>
     </div>
+
+    <style>
+    .pending-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #fef3c7;
+        color: #d97706;
+        padding: 6px 12px;
+        border: 1px solid #fed7aa;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .listing-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #d1fae5;
+        color: #059669;
+        padding: 6px 12px;
+        border: 1px solid #a7f3d0;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .sold-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #fce7f3;
+        color: #be185d;
+        padding: 6px 12px;
+        border: 1px solid #fbcfe8;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .favorite-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .product-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 2% auto;
+        padding: 0;
+        border: none;
+        border-radius: 12px;
+        width: 95%;
+        max-width: 1200px;
+        height: 90vh;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 25px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        border-radius: 12px 12px 0 0;
+        flex-shrink: 0;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        color: #333;
+        font-size: 1.5rem;
+    }
+
+    .close {
+        color: #999;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: #333;
+        background-color: #e9ecef;
+    }
+
+    .modal-body {
+        flex: 1;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    #productDetailsFrame {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 0 0 12px 12px;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        from { 
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 98%;
+            height: 95vh;
+            margin: 2.5% auto;
+        }
+    }
+    </style>
 
     <script>
-    // Tab switching functionality
+    function openProductModal(productId) {
+        // Set the iframe source to load the product details page
+        const iframe = document.getElementById('productDetailsFrame');
+        iframe.src = `/product/details/${productId}`;
+        
+        // Update modal title
+        document.getElementById('modalTitle').textContent = 'Product Details';
+        
+        // Show modal
+        document.getElementById('productModal').style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeProductModal() {
+        document.getElementById('productModal').style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scrolling
+        
+        // Clear iframe source to stop loading
+        document.getElementById('productDetailsFrame').src = '';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        const modal = document.getElementById('productModal');
+        if (event.target === modal) {
+            closeProductModal();
+        }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeProductModal();
+        }
+    });
+    </script>
+
+    <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const tabs = document.querySelectorAll(".tab");
-        const tabContents = document.querySelectorAll(".tab-content > div");
-
-        tabs.forEach((tab, index) => {
-        tab.addEventListener("click", function () {
-            // Remove active class from all tabs
-            tabs.forEach((t) => {
-            t.classList.remove("active");
-            });
-
-            // Add active class to clicked tab
+        const tabs = document.querySelectorAll(".tabs .tab");
+        const tabPanes = document.querySelectorAll(".tab-pane");
+        
+        tabs.forEach(tab => {
+        tab.addEventListener("click", function() {
+            tabs.forEach(t => t.classList.remove("active"));
             this.classList.add("active");
-
-            // In a real application, you would show different content here
-            // based on the selected tab (AJAX request or template rendering)
-
-            // For demonstration, we could show/hide content sections if they exist
-            if (tabContents.length > 1) {
-            tabContents.forEach((content) => {
-                content.style.display = "none";
-            });
-            if (tabContents[index]) {
-                tabContents[index].style.display = "block";
-            }
+            tabPanes.forEach(pane => pane.style.display = "none");
+            
+            const tabType = this.getAttribute("data-tab");
+            const targetPane = document.getElementById(`${tabType}-tab`);
+            if (targetPane) {
+            targetPane.style.display = "block";
             }
         });
         });

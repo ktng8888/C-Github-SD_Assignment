@@ -10,10 +10,10 @@
         <li class="sidebar-menu-item">
             <a href="#">
                 <i class="fas fa-box"></i>
-                <span>My Listings</span>
+                <span>My Products</span>
             </a>
-            <ul class="sidebar-submenu" {% if active_page in ['posts', 'sold'] %}style="display: block;"{% endif %}>
-                <li><a href="{{ url_for('account_posts') }}" {% if active_page == 'posts' %}class="active"{% endif %}>My Posts</a></li>
+            <ul class="sidebar-submenu" {% if active_page in ['listings', 'sold'] %}style="display: block;"{% endif %}>
+                <li><a href="{{ url_for('account_listings') }}" {% if active_page == 'listings' %}class="active"{% endif %}>My Listings</a></li>
                 <li><a href="{{ url_for('account_sold') }}" {% if active_page == 'sold' %}class="active"{% endif %}>My Sold Items</a></li>
             </ul>
         </li>

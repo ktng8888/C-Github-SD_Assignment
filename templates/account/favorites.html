@@ -1,5 +1,9 @@
 <div class="section-header">
-  <h2>My Favorites</h2>
+  <h2>My Favorites
+      {% if favorite_products_count >= 0 %} 
+        ( {{favorite_products_count}} ) 
+      {% endif %}
+  </h2>
 </div>
 
 <div class="tabs-container">
@@ -7,14 +11,14 @@
     {% if favorite_products and favorite_products|length > 0 %}
     <div class="product-grid">
         {% for product in favorite_products %}
-        <div class="product-card">
+        <div class="product-card" onclick="openProductModal('{{ product.id }}')">
             <div class="product-image">
             <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
             <div class="favorite-badge">♥ FAVORITE</div>
             </div>
             <div class="product-details">
             <div class="product-title">{{ product.title }}</div>
-            <div class="product-price">${{ product.price }}</div>
+            <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
             <div class="seller-info">
                 <i class="fas fa-user"></i> Seller: {{ product.seller }}
             </div>
@@ -36,14 +40,25 @@
     {% else %}
     <div class="empty-state">
         <i class="fas fa-heart"></i>
-        <h3>No favorites saved</h3>
-        <p>Products you favorite will appear here</p>
+        <h3>No favorite products saved</h3>
+        <p>Your favorite products will appear here</p>
     </div>
     {% endif %}
   </div>
 </div>
 
-
+<!-- Modal Popup -->
+<div id="productModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle">Product Details</h2>
+      <span class="close" onclick="closeProductModal()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <iframe id="productDetailsFrame" src="" frameborder="0"></iframe>
+    </div>
+  </div>
+</div>
 
 
 <style>
@@ -63,5 +78,155 @@
     text-transform: uppercase;
 }
 
+.product-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
+.product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 2% auto;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    width: 95%;
+    max-width: 1200px;
+    height: 90vh;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
+}
+
+.close {
+    color: #999;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close:hover,
+.close:focus {
+    color: #333;
+    background-color: #e9ecef;
+}
+
+.modal-body {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+}
+
+#productDetailsFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0 0 12px 12px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 98%;
+        height: 95vh;
+        margin: 2.5% auto;
+    }
+}
 </style>
+
+<script>
+function openProductModal(productId) {
+    // Set the iframe source to load the product details page
+    const iframe = document.getElementById('productDetailsFrame');
+    iframe.src = `/product/details/${productId}`;
+    
+    // Update modal title
+    document.getElementById('modalTitle').textContent = 'Product Details';
+    
+    // Show modal
+    document.getElementById('productModal').style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Restore scrolling
+    
+    // Clear iframe source to stop loading
+    document.getElementById('productDetailsFrame').src = '';
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+    const modal = document.getElementById('productModal');
+    if (event.target === modal) {
+        closeProductModal();
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeProductModal();
+    }
+});
+</script>

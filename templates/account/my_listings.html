@@ -1,43 +1,76 @@
 <div class="section-header">
-  <h2>Sold Items 
-    {% if sold_products_count >= 0 %} 
-        ( {{sold_products_count}} ) 
+  <h2>My Listings
+    {% if (listing_count >= 0) or (pending_count >= 0) %} 
+      ( {{listing_count + pending_count}} ) 
     {% endif %}
-</h2>
+  </h2>
 </div>
 
 <div class="tabs-container">
+  <div class="tabs">
+    <div class="tab {% if active_tab == 'listing' or active_tab is not defined %}active{% endif %}" data-tab="listing">
+      Listing ({{ listing_count|default('0') }})
+    </div>
+    <div class="tab {% if active_tab == 'pending' %}active{% endif %}" data-tab="pending">
+      Pending ({{ pending_count|default('0') }})
+    </div>
+  </div>
   <div class="tab-content">
-    {% if sold_products and sold_products|length > 0 %}
-    <div class="product-grid">
-        {% for product in sold_products %}
+    <!-- listing Products Tab -->
+    <div class="tab-pane {% if active_tab == 'listing' or active_tab is not defined %}active{% endif %}" id="listing-tab" 
+      {% if active_tab == 'pending' %}style="display: none;"{% endif %}>
+      {% if listing_products and listing_products|length > 0 %}
+      <div class="product-grid">
+        {% for product in listing_products %}
         <div class="product-card" onclick="openProductModal('{{ product.id }}')">
-            <div class="product-image">
+          <div class="product-image">
             <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
-            <div class="sold-badge">💰Sold</div>
-            </div>
-            <div class="product-details">
+            <div class="listing-badge">✅Listing</div>
+          </div>
+          <div class="product-details">
             <div class="product-title">{{ product.title }}</div>
             <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
-            <div class="product-sale-date">
-                <i class="fas fa-calendar-alt"></i> 
-                {% if product.delivered_date %}
-                    Sold on {{ product.delivered_date }}
-                {% else %}
-                    Order Status: {{ product.order_status }}
-                {% endif %}
-            </div>
-            </div>
+            <div class="product-status">Status: {{ product.status }}</div>
+          </div>
         </div>
         {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-box-open"></i>
+        <h3>No approved listings yet</h3>
+        <p>Your listings will appear here once approved</p>
+      </div>
+      {% endif %}
     </div>
-    {% else %}
-    <div class="empty-state">
-        <i class="fas fa-tags"></i>
-        <h3>No sold items yet</h3>
-        <p>Your sold items will appear here</p>
+    
+    <!-- Pending Products Tab -->
+    <div class="tab-pane {% if active_tab == 'pending' %}active{% endif %}" id="pending-tab" 
+         {% if active_tab != 'pending' %}style="display: none;"{% endif %}>
+      {% if pending_products and pending_products|length > 0 %}
+      <div class="product-grid">
+        {% for product in pending_products %}
+        <div class="product-card" onclick="openProductModal('{{ product.id }}')">
+          <div class="product-image">
+            <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+            <div class="pending-badge">⏳Pending</div>
+          </div>
+          <div class="product-details">
+            <div class="product-title">{{ product.title }}</div>
+            <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
+            <div class="product-status pending-status">Status: {{ product.status }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-hourglass-half"></i>
+        <h3>No pending listings</h3>
+        <p>Products awaiting approval will appear here</p>
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
 </div>
 
@@ -54,25 +87,65 @@
   </div>
 </div>
 
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tabs = document.querySelectorAll(".tabs .tab");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+    
+    tabs.forEach(tab => {
+      tab.addEventListener("click", function() {
+        // Remove active class from all tabs
+        tabs.forEach(t => t.classList.remove("active"));
+        
+        // Add active class to clicked tab
+        this.classList.add("active");
+        
+        // Hide all tab panes
+        tabPanes.forEach(pane => pane.style.display = "none");
+        
+        // Show the selected tab pane
+        const tabType = this.getAttribute("data-tab");
+        const targetPane = document.getElementById(`${tabType}-tab`);
+        if (targetPane) {
+          targetPane.style.display = "block";
+        }
+      });
+    });
+  });
+</script>
+
 <style>
 .section-header{
     margin-bottom: 20px;
 }
 
-.sold-badge {
+.pending-badge {
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: #fce7f3;
-    color: #be185d;
+    background-color: #fef3c7;
+    color: #d97706;
     padding: 6px 12px;
-    border: 1px solid #fbcfe8;
+    border: 1px solid #fed7aa;
     border-radius: 20px;
     font-size: 11px;
     font-weight: bold;
     text-transform: uppercase;
 }
 
+.listing-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #d1fae5;
+    color: #059669;
+    padding: 6px 12px;
+    border: 1px solid #a7f3d0;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
 .product-card {
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;

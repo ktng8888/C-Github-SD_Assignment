@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .product-details-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .product-image-section {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .main-image-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 400px;
+            object-fit: contain;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .pending-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #fef3c7;
+            color: #d97706;
+            padding: 6px 12px;
+            border: 1px solid #fed7aa;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .listing-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #d1fae5;
+            color: #059669;
+            padding: 6px 12px;
+            border: 1px solid #a7f3d0;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .sold-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #fce7f3;
+            color: #be185d;
+            padding: 6px 12px;
+            border: 1px solid #fbcfe8;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .favorite-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .additional-photos {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .additional-photo {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .additional-photo:hover {
+            border-color: #007bff;
+            transform: scale(1.05);
+        }
+
+        .additional-photo.active {
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+        }
+
+        .additional-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: #f8f9fa;
+        }
+
+        .photo-counter {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .product-info-section {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .order-info-section {
+            border-left-color: #28a745;
+        }
+
+        .info-section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: flex-start;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 140px;
+            margin-right: 10px;
+        }
+
+        .info-value {
+            color: #333;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .product-details-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .product-image-section,
+            .product-info-section {
+                min-width: auto;
+            }
+            
+            .info-row {
+                flex-direction: column;
+            }
+            
+            .info-label {
+                min-width: auto;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="product-details-container">
+        <div class="product-image-section">
+            <div class="main-image-container">
+                <img id="mainImage" class="main-image" src="{{ product.main_photo }}" alt="{{ product.title }}">
+                    {% if product.status == 'listing' %}
+                        <div class="listing-badge">✅Listing</div>
+                    {% elif product.status == 'pending' %}
+                        <div class="pending-badge">⏳Pending</div>
+                    {% elif product.status == 'sold' %}
+                        <div class="sold-badge">💰Sold</div>
+                    {% endif %}
+                    
+                    <!--
+                    {% if context.is_favorited %}
+                        <div class="favorite-badge">♥ Maked as Favorite</div>
+                    {% endif %}
+                    -->
+
+            </div>
+            <div class="additional-photos" id="additionalPhotos">
+                <!-- Additional photos will be populated here -->
+            </div>
+        </div>
+
+        <div class="product-info-section">
+            <div class="info-section">
+                <h3>Product Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Title:</span>
+                    <span class="info-value">{{ product.title }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Brand:</span>
+                    <span class="info-value">{{ product.brand }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Model:</span>
+                    <span class="info-value">{{ product.model }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Year:</span>
+                    <span class="info-value">{{ product.year }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Category:</span>
+                    <span class="info-value">{{ product.category }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Price:</span>
+                    <span class="info-value">RM {{ "%.2f"|format(product.price|float) }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value">{{ product.status|title }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Description:</span>
+                    <span class="info-value">{{ product.description }}</span>
+                </div>
+            </div>
+            
+            {% if context.has_order %}
+            <div class="info-section order-info-section">
+                <h3>Order Information</h3>
+                <div class="info-row">
+                    <span class="info-label">Order ID:</span>
+                    <span class="info-value">{{ product.order_id }}</span>
+                </div>
+                {% if context.is_seller %}
+                <div class="info-row">
+                    <span class="info-label">Buyer:</span>
+                    <span class="info-value">{{ product.buyer_username }}</span>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <span class="info-label">Order Date:</span>
+                    <span class="info-value">{{ product.order_date }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Payment Method:</span>
+                    <span class="info-value">{{ product.payment_method }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Amount Paid:</span>
+                    <span class="info-value">RM {{ "%.2f"|format(product.amount_paid|float) }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value">{{ product.order_status|title }}</span>
+                </div>
+                <div class="info-row {% if not product.delivered_date %}hidden{% endif %}">
+                    <span class="info-label">Delivered Date:</span>
+                    <span class="info-value">{{ product.delivered_date or "" }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pass data to JavaScript safely -->
+    <script id="product-data" type="application/json">
+        {
+            "main_photo": "{{ product.main_photo }}",
+            "additional_photos": {{ product.additional_photos|tojson }}
+        }
+    </script>
+
+    <script>
+        // Initialize photo gallery
+        document.addEventListener('DOMContentLoaded', function() {
+            const additionalPhotosContainer = document.getElementById('additionalPhotos');
+            const mainImage = document.getElementById('mainImage');
+            
+            // Get photo data from JSON script tag
+            const productData = JSON.parse(document.getElementById('product-data').textContent);
+            
+            // Build all photos array
+            const allPhotos = [productData.main_photo];
+            
+            // Add additional photos if they exist
+            if (productData.additional_photos && Array.isArray(productData.additional_photos)) {
+                productData.additional_photos.forEach(photo => {
+                    if (photo && photo.trim() !== '') {
+                        allPhotos.push('/static/uploads/product_images/' + photo);
+                    }
+                });
+            }
+            
+            // Only show thumbnails if there are multiple photos
+            if (allPhotos.length > 1) {
+                allPhotos.forEach((photo, index) => {
+                    const photoDiv = document.createElement('div');
+                    photoDiv.className = `additional-photo ${index === 0 ? 'active' : ''}`;
+                    photoDiv.onclick = () => switchMainImage(photo, photoDiv, index + 1, allPhotos.length);
+                    
+                    const img = document.createElement('img');
+                    img.src = photo;
+                    img.alt = `Photo ${index + 1}`;
+                    
+                    photoDiv.appendChild(img);
+                    
+                    // Add photo counter if it's the main photo
+                    if (index === 0) {
+                        const counter = document.createElement('div');
+                        counter.className = 'photo-counter';
+                        counter.textContent = `1/${allPhotos.length}`;
+                        photoDiv.appendChild(counter);
+                    }
+                    
+                    additionalPhotosContainer.appendChild(photoDiv);
+                });
+            }
+        });
+
+        function switchMainImage(newImageSrc, clickedElement, photoNumber, totalPhotos) {
+            // Update main image
+            document.getElementById('mainImage').src = newImageSrc;
+            
+            // Update active state
+            const additionalPhotos = document.querySelectorAll('.additional-photo');
+            additionalPhotos.forEach(photo => photo.classList.remove('active'));
+            clickedElement.classList.add('active');
+            
+            // Update photo counter
+            additionalPhotos.forEach(photo => {
+                const counter = photo.querySelector('.photo-counter');
+                if (counter) counter.remove();
+            });
+            
+            const counter = document.createElement('div');
+            counter.className = 'photo-counter';
+            counter.textContent = `${photoNumber}/${totalPhotos}`;
+            clickedElement.appendChild(counter);
+        }
+    </script>
+</body>
+</html>
