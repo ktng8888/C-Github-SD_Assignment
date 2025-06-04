@@ -25,6 +25,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='products.css') }}"
     />
+
   </head>
   <body>
     <div class="main-container">
@@ -159,8 +160,11 @@
                     alt="{{ product.title }}"
                   />
 
-                  <button class="wishlist-button">
-                    <i class="far fa-heart"></i>
+                  <button 
+                    class="wishlist-button {% if product.is_favorite %}active{% endif %}" 
+                    data-product-id="{{ product.id }}"
+                  >
+                    <i class="{% if product.is_favorite %}fas{% else %}far{% endif %} fa-heart"></i>
                   </button>
                 </div>
                 <div class="product-info">
@@ -273,6 +277,46 @@
             window.location.search = urlParams.toString();
           });
         }
+
+        // Wishlist functionality
+        const wishlistButtons = document.querySelectorAll('.wishlist-button');
+        
+        wishlistButtons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            const productId = this.getAttribute('data-product-id');
+            
+            // Add loading state
+            this.classList.add('loading');
+            
+            fetch('/toggle_favorite', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                product_id: productId
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                // Just reload the page to see the changes
+                window.location.reload();
+              } else {
+                console.error('Failed to toggle favorite:', data.message);
+                this.classList.remove('loading');
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              this.classList.remove('loading');
+            });
+          });
+        });
       });
     </script>
   </body>

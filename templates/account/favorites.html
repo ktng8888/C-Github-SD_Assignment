@@ -11,12 +11,12 @@
     {% if favorite_products and favorite_products|length > 0 %}
     <div class="product-grid">
         {% for product in favorite_products %}
-        <div class="product-card" onclick="openProductModal('{{ product.id }}')">
-            <div class="product-image">
+        <div class="product-card" data-product-id="{{ product.id }}">
+            <div class="product-image" onclick="openProductModal('{{ product.id }}')">
             <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
             <div class="favorite-badge">♥ FAVORITE</div>
             </div>
-            <div class="product-details">
+            <div class="product-details" onclick="openProductModal('{{ product.id }}')">
             <div class="product-title">{{ product.title }}</div>
             <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
             <div class="seller-info">
@@ -29,9 +29,9 @@
                 <a href="/product/{{ product.id }}" class="action-btn details-btn">
                     <i class="fas fa-eye"></i> View Product
                 </a>
-                <a href="#" class="action-btn remove-btn">
+                <button class="action-btn remove-btn toggle-favorite-btn" data-product-id="{{ product.id }}">
                     <i class="fas fa-heart-broken"></i> Remove
-                </a>
+                </button>
             </div>
             </div>
         </div>
@@ -86,6 +86,64 @@
 .product-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Action buttons styling */
+.product-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 5px;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+/* View Product button */
+.details-btn {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.details-btn:hover {
+    background-color: #2563eb;
+}
+
+/* Remove button */
+.remove-btn {
+    background-color: #ef4444;
+    color: white;
+}
+
+.remove-btn:hover {
+    background-color: #dc2626;
+}
+
+/* Loading state */
+.remove-btn:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .product-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
 }
 
 /* Modal Styles */
@@ -194,6 +252,72 @@
 </style>
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Toggle favorite functionality for remove buttons
+    const removeButtons = document.querySelectorAll('.toggle-favorite-btn');
+    
+    removeButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            // Show confirmation dialog
+            if (!confirm('Are you sure you want to remove this item from your favorites?')) {
+                return;
+            }
+            
+            const productId = this.getAttribute('data-product-id');
+            const productCard = this.closest('.product-card');
+            
+            // Add loading state
+            this.classList.add('loading');
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Removing...';
+            
+            fetch('/toggle_favorite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.action === 'removed') {
+                        // Remove the product card
+                        productCard.remove();
+                        
+                        // Update favorites count in header
+                        const currentCount = document.querySelectorAll('.product-card').length;
+                        const header = document.querySelector('.section-header h2');
+                        header.textContent = `My Favorites ( ${currentCount} )`;
+                        
+                        // Reload page if no favorites left to show empty state
+                        if (currentCount === 0) {
+                            location.reload();
+                        }
+                    }
+                } else {
+                    console.error('Failed to remove favorite:', data.message);
+                    this.classList.remove('loading');
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-heart-broken"></i> Remove';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.classList.remove('loading');
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-heart-broken"></i> Remove';
+            });
+        });
+    });
+});
+
 function openProductModal(productId) {
     // Set the iframe source to load the product details page
     const iframe = document.getElementById('productDetailsFrame');

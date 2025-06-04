@@ -89,6 +89,72 @@ def main():
     
     return render_template('main.html', featured_products=featured_products)
 
+@app.route('/require_login')
+def require_login():
+    flash("Please login to access this feature")
+    return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('main'))
+        
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                data = line.strip().split(',')
+                if (data[0] == username or data[2] == username) and check_password_hash(data[3], password):
+                    user = User(data[0], data[1], data[2], data[3])
+                    login_user(user)
+                    return redirect(url_for('main'))
+        
+        flash("Invalid username or password.")
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return render_template('main.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        phone = request.form['phone']
+        email = request.form['email']
+        password = request.form['password']
+        confirm = request.form['confirm']
+
+        if password != confirm:
+            flash("Passwords do not match!")
+            return render_template('register.html')
+
+        # Check if username or email already exists
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                data = line.strip().split(',')
+                if data[0] == username:
+                    flash("Username already exists!")
+                    return render_template('register.html')
+                if data[2] == email:
+                    flash("Email already registered!")
+                    return render_template('register.html')
+
+        # Hash the password before storing
+        hashed_password = generate_password_hash(password)
+        
+        with open("databases/member_detail.txt", "a") as file:
+            file.write(f"{username},{phone},{email},{hashed_password}\n")
+        
+        flash("Registration successful! Please login.")
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
 @app.route('/products')
 @login_required
 def products():
@@ -113,6 +179,21 @@ def products():
                     })
     except FileNotFoundError:
         pass
+
+    # Get user's favorites
+    user_favorites = []
+    try:
+        with open("databases/favorites.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 4 and parts[1] == current_user.id:
+                    user_favorites.append(parts[2])
+    except FileNotFoundError:
+        pass
+
+    # Add favorite status to each product
+    for product in products:
+        product['is_favorite'] = product['id'] in user_favorites
 
     # Filter to show only approved products
     # products = [p for p in products if p['status'] == 'approved']
@@ -143,6 +224,54 @@ def products():
     return render_template('products.html', 
                          products=products,
                          selected_category=selected_category)
+
+@app.route('/toggle_favorite', methods=['POST'])
+@login_required
+def toggle_favorite():
+    from flask import jsonify
+    from datetime import datetime
+    
+    product_id = request.json.get('product_id')
+    username = current_user.id
+    
+    if not product_id or not username:
+        return jsonify({'success': False, 'message': 'Invalid request'})
+    
+    favorites = []
+    is_favorite = False
+    
+    # Read existing favorites
+    try:
+        with open("databases/favorites.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 4:
+                    favorites.append(parts)
+                    if parts[1] == username and parts[2] == product_id:
+                        is_favorite = True
+    except FileNotFoundError:
+        pass
+    
+    if is_favorite:
+        # Remove from favorites
+        favorites = [f for f in favorites if not (f[1] == username and f[2] == product_id)]
+        action = 'removed'
+    else:
+        # Add to favorites
+        new_id = str(len(favorites) + 1)
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        favorites.append([new_id, username, product_id, timestamp])
+        action = 'added'
+    
+    # Write back to file
+    try:
+        with open("databases/favorites.txt", "w") as file:
+            for fav in favorites:
+                file.write('||'.join(fav) + '\n')
+        
+        return jsonify({'success': True, 'action': action, 'is_favorite': not is_favorite})
+    except Exception as e:
+        return jsonify({'success': False, 'message': 'Error updating favorites'})
 
 @app.route('/product/<product_id>')
 @login_required
@@ -278,13 +407,6 @@ def sell():
 def messages():
     return render_template('messages.html')
 
-'''
-@app.route('/account')
-@login_required
-def account():
-    return render_template('account/account.html')
-'''
-
 @app.route('/account')
 @login_required
 def account():
@@ -333,7 +455,7 @@ def account_profile():
                     if parts[1] == current_user.id:
                         seller_total_products.append(product)
                         if parts[3] == 'sold':
-                            sold_products.append(product);
+                            sold_products.append(product)
                     
                     if product_id in user_favorites:
                         favorite_products.append(product)
@@ -347,7 +469,7 @@ def account_profile():
 
     seller_total_products_count = len(seller_total_products)
     favorite_count = len(favorite_products)
-    sold_count = len(favorite_products) 
+    sold_count = len(sold_products) 
 
     return render_template('account/account.html', active_page='profile',
                            active_tab = active_tab,
@@ -623,6 +745,37 @@ def account_favorites():
                           favorite_products=favorite_products,
                           favorite_products_count = favorite_products_count)
 
+@app.route('/remove_favorite/<product_id>', methods=['POST'])
+@login_required
+def remove_favorite(product_id):
+    username = current_user.id
+    favorites = []
+    
+    # Read existing favorites
+    try:
+        with open("databases/favorites.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 4:
+                    favorites.append(parts)
+    except FileNotFoundError:
+        pass
+    
+    # Remove the specific favorite for this user and product
+    favorites = [f for f in favorites if not (f[1] == username and f[2] == product_id)]
+    
+    # Write back to file
+    try:
+        with open("databases/favorites.txt", "w") as file:
+            for fav in favorites:
+                file.write('||'.join(fav) + '\n')
+        
+        flash("Item removed from favorites!")
+        return redirect(url_for('account_favorites'))
+    except Exception as e:
+        flash("Error removing item from favorites")
+        return redirect(url_for('account_favorites'))
+
 @app.route('/account/orders')
 @login_required
 def account_orders():
@@ -803,72 +956,6 @@ def product_details_modal(product_id):
 @login_required
 def account_settings():
     return render_template('account/account.html', active_page='settings')
-    
-@app.route('/require_login')
-def require_login():
-    flash("Please login to access this feature")
-    return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('main'))
-        
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        with open("databases/member_detail.txt", "r") as file:
-            for line in file:
-                data = line.strip().split(',')
-                if (data[0] == username or data[2] == username) and check_password_hash(data[3], password):
-                    user = User(data[0], data[1], data[2], data[3])
-                    login_user(user)
-                    return redirect(url_for('main'))
-        
-        flash("Invalid username or password.")
-    return render_template('login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return render_template('main.html')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        phone = request.form['phone']
-        email = request.form['email']
-        password = request.form['password']
-        confirm = request.form['confirm']
-
-        if password != confirm:
-            flash("Passwords do not match!")
-            return render_template('register.html')
-
-        # Check if username or email already exists
-        with open("databases/member_detail.txt", "r") as file:
-            for line in file:
-                data = line.strip().split(',')
-                if data[0] == username:
-                    flash("Username already exists!")
-                    return render_template('register.html')
-                if data[2] == email:
-                    flash("Email already registered!")
-                    return render_template('register.html')
-
-        # Hash the password before storing
-        hashed_password = generate_password_hash(password)
-        
-        with open("databases/member_detail.txt", "a") as file:
-            file.write(f"{username},{phone},{email},{hashed_password}\n")
-        
-        flash("Registration successful! Please login.")
-        return redirect(url_for('login'))
-    
-    return render_template('register.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
