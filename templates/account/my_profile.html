@@ -2,6 +2,7 @@
     <div class="profile-section">
     <div class="profile-wrapper">
         <div class="profile-card">
+
         <div class="profile-avatar">
             <img
             src="{{ url_for('static', filename='images/default-avatar.jpg') }}"
@@ -11,6 +12,8 @@
             <i class="fas fa-camera"></i>
             </div>
         </div>
+
+
         <div class="profile-info">
             <div class="profile-name">
             {{ current_user.username|default('KeanTiong') }} {% if
@@ -23,6 +26,7 @@
             <div class="profile-meta">
             {{ current_user.email }}
             </div>
+
             <div class="profile-stats">
             <div class="stat-item">
                 <div class="stat-value">
@@ -37,10 +41,11 @@
                 <div class="stat-label">Sold</div>
             </div>
             </div>
+
         </div>
-        <button class="edit-profile-btn">
+        <a href="{{ url_for('account_settings') }}" class="edit-profile-btn">
             <i class="fas fa-edit"></i> Edit Profile
-        </button>
+        </a>
         </div>
     </div>
     </div>

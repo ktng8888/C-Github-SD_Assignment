@@ -261,6 +261,7 @@ body {
   align-items: center;
   gap: 8px;
   transition: var(--transition);
+  text-decoration: none;
 }
 
 .edit-profile-btn:hover {

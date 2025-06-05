@@ -15,20 +15,22 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 class User(UserMixin):
-    def __init__(self, username, phone, email, password):
+    def __init__(self, username, phone, email, password, address, profile_image):
         self.id = username
         self.username = username
         self.phone = phone
         self.email = email
         self.password = password
+        self.address = address
+        self.profile_image = profile_image
 
 @login_manager.user_loader
 def load_user(username):
     with open("databases/member_detail.txt", "r") as file:
         for line in file:
-            data = line.strip().split(',')
+            data = line.strip().split('||')
             if data[0] == username:
-                return User(data[0], data[1], data[2], data[3])
+                return User(data[0], data[1], data[2], data[3], data[4], data[5])
     return None
 
 @app.route('/')
@@ -105,9 +107,9 @@ def login():
         
         with open("databases/member_detail.txt", "r") as file:
             for line in file:
-                data = line.strip().split(',')
+                data = line.strip().split('||')
                 if (data[0] == username or data[2] == username) and check_password_hash(data[3], password):
-                    user = User(data[0], data[1], data[2], data[3])
+                    user = User(data[0], data[1], data[2], data[3], data[4], data[5])
                     login_user(user)
                     return redirect(url_for('main'))
         
@@ -136,7 +138,7 @@ def register():
         # Check if username or email already exists
         with open("databases/member_detail.txt", "r") as file:
             for line in file:
-                data = line.strip().split(',')
+                data = line.strip().split('||')
                 if data[0] == username:
                     flash("Username already exists!")
                     return render_template('register.html')
@@ -146,9 +148,12 @@ def register():
 
         # Hash the password before storing
         hashed_password = generate_password_hash(password)
+
+        address = "-"
+        profile_image = "-"
         
         with open("databases/member_detail.txt", "a") as file:
-            file.write(f"{username},{phone},{email},{hashed_password}\n")
+            file.write(f"{username}||{phone}||{email}||{hashed_password}||{address}||{profile_image}\n")
         
         flash("Registration successful! Please login.")
         return redirect(url_for('login'))
@@ -952,10 +957,118 @@ def product_details_modal(product_id):
     
     return render_template('account/show_details.html', product=product, context=context)
 
+'''
 @app.route('/account/settings')
 @login_required
 def account_settings():
+
     return render_template('account/account.html', active_page='settings')
+'''
+@app.route('/account/settings', methods=['GET', 'POST'])
+@login_required
+def account_settings():
+    if request.method == 'POST':
+        # Get form data - only editable fields
+        phone = request.form.get('phone')
+        address = request.form.get('address')
+        
+        # Username and email remain unchanged
+        username = current_user.username
+        email = current_user.email
+        
+        # Handle profile image upload
+        profile_image_filename = current_user.profile_image  # Keep existing image by default
+        profile_image = request.files.get('profile_image')
+        
+        if profile_image and profile_image.filename:
+            # Validate file type
+            allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+            file_extension = profile_image.filename.rsplit('.', 1)[1].lower()
+            
+            if file_extension not in allowed_extensions:
+                flash("Invalid file type! Please upload PNG, JPG, JPEG, or GIF files only.")
+                return render_template('account/account.html', active_page='settings')
+            
+            # Create upload directory if it doesn't exist
+            upload_dir = os.path.join('static/uploads/profile_images')
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Generate unique filename
+            profile_image_filename = f"{current_user.id}_{int(time.time())}_profile.{file_extension}"
+            
+            # Save the file
+            try:
+                profile_image.save(os.path.join(upload_dir, profile_image_filename))
+                
+                # Delete old profile image if it exists and is not default
+                if (current_user.profile_image and 
+                    current_user.profile_image != '-' and 
+                    current_user.profile_image != profile_image_filename):
+                    old_image_path = os.path.join(upload_dir, current_user.profile_image)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+            except Exception as e:
+                flash("Error uploading profile image. Please try again.")
+                return render_template('account/account.html', active_page='settings')
+        
+        # Handle profile image removal
+        if request.form.get('remove_image') == 'true':
+            # Delete current profile image if it exists
+            if (current_user.profile_image and 
+                current_user.profile_image != '-'):
+                upload_dir = os.path.join('static/uploads/profile_images')
+                old_image_path = os.path.join(upload_dir, current_user.profile_image)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+            profile_image_filename = '-'
+        
+        # Update user data in file (username and email remain unchanged)
+        updated_lines = []
+        user_found = False
+        
+        try:
+            with open("databases/member_detail.txt", "r") as file:
+                for line in file:
+                    data = line.strip().split('||')
+                    if len(data) >= 6 and data[0] == current_user.id:
+                        # Update current user's record - keep original username and email
+                        updated_line = f"{username}||{phone}||{email}||{data[3]}||{address}||{profile_image_filename}\n"
+                        updated_lines.append(updated_line)
+                        user_found = True
+                    else:
+                        updated_lines.append(line)
+            
+            if user_found:
+                # Write updated data back to file
+                with open("databases/member_detail.txt", "w") as file:
+                    file.writelines(updated_lines)
+                
+                # Update current user object (only editable fields)
+                current_user.phone = phone
+                current_user.address = address
+                current_user.profile_image = profile_image_filename
+                
+                flash("Profile updated successfully!")
+            else:
+                flash("Error updating profile. User not found.")
+                
+        except Exception as e:
+            flash("Error updating profile. Please try again.")
+        
+        return redirect(url_for('account_settings'))
+    
+    # GET request - display the form with current user data
+    user_data = {
+        'username': current_user.username,
+        'email': current_user.email,
+        'phone': current_user.phone if current_user.phone != '-' else '',
+        'address': current_user.address if current_user.address != '-' else '',
+        'profile_image': current_user.profile_image if current_user.profile_image != '-' else None
+    }
+    
+    return render_template('account/account.html', 
+                         active_page='settings', 
+                         user_data=user_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
