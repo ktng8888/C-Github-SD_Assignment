@@ -244,6 +244,7 @@ def toggle_favorite():
     
     favorites = []
     is_favorite = False
+    highest_id = 0
     
     # Read existing favorites
     try:
@@ -252,6 +253,14 @@ def toggle_favorite():
                 parts = line.strip().split('||')
                 if len(parts) >= 4:
                     favorites.append(parts)
+                    
+                    try:
+                        current_id = int(parts[0])
+                        if current_id > highest_id:
+                            highest_id = current_id
+                    except ValueError:
+                        pass
+                    
                     if parts[1] == username and parts[2] == product_id:
                         is_favorite = True
     except FileNotFoundError:
@@ -263,7 +272,7 @@ def toggle_favorite():
         action = 'removed'
     else:
         # Add to favorites
-        new_id = str(len(favorites) + 1)
+        new_id = str(highest_id + 1)
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         favorites.append([new_id, username, product_id, timestamp])
         action = 'added'
@@ -421,11 +430,13 @@ def account():
 @login_required
 def account_profile():
     active_tab = request.args.get('tab', 'listing')
-    seller_total_products = [];
-    favorite_products = [];
-    sold_products = [];
+    user_profile_image = current_user.profile_image if current_user.profile_image != '-' else None
+    
+    seller_total_products = []
+    favorite_products = []
+    sold_products = []
+    user_favorites = []
 
-    user_favorites = [];
     try:
         with open("databases/favorites.txt", "r") as file:
             for line in file:
@@ -478,6 +489,7 @@ def account_profile():
 
     return render_template('account/account.html', active_page='profile',
                            active_tab = active_tab,
+                           user_profile_image = user_profile_image,
                            seller_total_products = seller_total_products,
                            favorite_products = favorite_products,
                            sold_products = sold_products,
@@ -957,13 +969,6 @@ def product_details_modal(product_id):
     
     return render_template('account/show_details.html', product=product, context=context)
 
-'''
-@app.route('/account/settings')
-@login_required
-def account_settings():
-
-    return render_template('account/account.html', active_page='settings')
-'''
 @app.route('/account/settings', methods=['GET', 'POST'])
 @login_required
 def account_settings():

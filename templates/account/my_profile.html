@@ -4,13 +4,15 @@
         <div class="profile-card">
 
         <div class="profile-avatar">
-            <img
-            src="{{ url_for('static', filename='images/default-avatar.jpg') }}"
-            alt="Profile Picture"
-            />
-            <div class="edit-avatar">
-            <i class="fas fa-camera"></i>
-            </div>
+            <img id="profilePreview" 
+                    src="
+                    {% if user_profile_image %}
+                        /static/uploads/profile_images/{{ user_profile_image }}
+                    {% else %}
+                        /static/images/default_profile.png
+                    {% endif %}" 
+                    alt="Profile Picture" 
+                    class="profile-image">
         </div>
 
 
@@ -204,6 +206,8 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
+
+
 
     /* Modal Styles */
     .modal {
