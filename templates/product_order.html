@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order {{ product.title }} - SecondLife</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='main.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='header.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='footer.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='product_order.css') }}"
+    />
+
+  </head>
+  <body>
+    <div class="main-container">
+      {% include 'header.html' %}
+
+      <div class="order-container">
+        <div class="order-form">
+          <a href="{{ url_for('product_details', product_id=product.id) }}" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Product
+          </a>
+
+          <h2 class="section-title">Order Details</h2>
+
+          <form id="orderForm" method="POST" action="{{ url_for('handle_order', product_id=product.id) }}">
+            <div class="form-group">
+              <label class="form-label">Buyer Username</label>
+              <input 
+                type="text" 
+                class="form-input" 
+                name="buyer_username"
+                value="{{ user_data.username }}" 
+                readonly
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Payment Method</label>
+              <div class="payment-methods">
+                <div class="payment-option" onclick="selectPayment(this, 'online_banking')">
+                  <input type="radio" name="payment_method" value="online_banking" id="online_banking">
+                  <i class="fas fa-university payment-icon" style="color: #28a745;"></i>
+                  <label for="online_banking" class="payment-label">Online Banking</label>
+                </div>
+                
+                <div class="payment-option" onclick="selectPayment(this, 'paypal')">
+                  <input type="radio" name="payment_method" value="paypal" id="paypal">
+                  <i class="fab fa-paypal payment-icon" style="color: #0070ba;"></i>
+                  <label for="paypal" class="payment-label">PayPal</label>
+                </div>
+                
+                <div class="payment-option" onclick="selectPayment(this, 'credit_card')">
+                  <input type="radio" name="payment_method" value="credit_card" id="credit_card">
+                  <i class="fas fa-credit-card payment-icon" style="color: #dc3545;"></i>
+                  <label for="credit_card" class="payment-label">Credit Card Payment</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Delivery Address</label>
+              <textarea 
+                class="form-input textarea" 
+                placeholder="Enter your complete delivery address..."
+                name="delivery_address"
+                value="{{ user_data.address }}"
+                required
+              >{{ user_data.address }}</textarea>
+            </div>
+
+          </form>
+        </div>
+
+        <div class="order-summary">
+          <h3 class="section-title">Order Summary</h3>
+          
+          <div class="product-item">
+            <img 
+              src="{{ url_for('static', filename='uploads/product_images/' + product.main_photo) }}" 
+              alt="{{ product.title }}"
+              class="product-image"
+            />
+            <div class="product-details">
+              <h4>{{ product.title }}</h4>
+              <p style="color: #666; font-size: 14px; margin: 4px 0;">
+                Seller: {{ product.seller }}
+              </p>
+              <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
+            </div>
+          </div>
+
+          <div class="order-summary-item">
+            <span>Subtotal:</span>
+            <span>RM{{  "%.2f"|format(product.price) }}</span>
+          </div>
+          
+          <div class="order-summary-item">
+            <span>Shipping Fee:</span>
+            <span>RM {{  "%.2f"|format(product.shipping_cost) }}</span>
+          </div>
+          
+          <div class="order-summary-item">
+            <span>Total:</span>
+            <span>RM{{ "%.2f"|format(product.price + product.shipping_cost) }}</span>
+          </div>
+
+          <button class="place-order-btn" onclick="placeOrder()">
+            <i class="fas fa-shopping-cart"></i> Place Order
+          </button>
+
+          <div style="margin-top: 15px; font-size: 12px; color: #666; text-align: center;">
+            <i class="fas fa-shield-alt"></i> Secure payment processing
+          </div>
+        </div>
+      </div>
+
+      {% include 'footer.html' %}
+    </div>
+
+    <script>
+      function selectPayment(element, value) {
+        // Remove selected class from all payment options
+        document.querySelectorAll('.payment-option').forEach(option => {
+          option.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked option
+        element.classList.add('selected');
+        
+        // Check the radio button
+        document.getElementById(value).checked = true;
+      }
+
+      function placeOrder() {
+        // Get form data
+        const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+        const address = document.querySelector('textarea[name="delivery_address"]').value;
+        
+        // Basic validation
+        if (!paymentMethod) {
+          alert('Please select a payment method');
+          return;
+        }
+        
+        if (!address.trim()) {
+          alert('Please enter your delivery address');
+          return;
+        }
+        
+        // Show loading state
+        const orderBtn = document.querySelector('.place-order-btn');
+        orderBtn.disabled = true;
+        orderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
+        // Submit the form
+        document.getElementById('orderForm').submit();
+      }
+
+      // Add CSS for selected payment option and disabled button
+      const style = document.createElement('style');
+      style.textContent = `
+        .payment-option.selected {
+          border-color: #27ae60 !important;
+          background-color: #e3f2fd !important;
+        }
+        
+        .place-order-btn:disabled {
+          background: #6c757d !important;
+          cursor: not-allowed !important;
+        }
+      `;
+      document.head.appendChild(style);
+    </script>
+  </body>
+</html>

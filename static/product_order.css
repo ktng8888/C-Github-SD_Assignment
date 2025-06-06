@@ -1,0 +1,216 @@
+.order-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+    }
+
+    .order-form {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    }
+
+    .order-summary {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+    }
+
+    .section-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+    }
+
+    .form-group {
+    margin-bottom: 25px;
+    }
+
+    .form-label {
+    display: block;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 8px;
+    font-size: 14px;
+    }
+
+    .form-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    background-color: #f8f9fa;
+    }
+
+    .form-input:disabled {
+    background-color: #f1f3f4;
+    color: #6c757d;
+    cursor: not-allowed;
+    }
+
+    .form-input:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .textarea {
+    min-height: 100px;
+    resize: vertical;
+    font-family: inherit;
+    }
+
+    .payment-methods {
+    display: grid;
+    gap: 15px;
+    }
+
+    .payment-option {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fff;
+    }
+
+    .payment-option:hover {
+    border-color: #27ae60;
+    background-color: #f8f9ff;
+    }
+
+    .payment-option.selected {
+    border-color: #27ae60;
+    background-color: #e3f2fd;
+    }
+
+    .payment-option input[type="radio"] {
+    margin-right: 12px;
+    transform: scale(1.2);
+    }
+
+    .payment-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    width: 30px;
+    text-align: center;
+    }
+
+    .payment-label {
+    font-weight: 500;
+    color: #333;
+    }
+
+    .product-item {
+    display: flex;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #e0e0e0;
+    }
+
+    .product-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 15px;
+    }
+
+    .product-details h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    }
+
+    .product-price {
+    font-size: 18px;
+    font-weight: 600;
+    color: #27ae60;
+    margin: 8px 0;
+    }
+
+    .order-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+    }
+
+    .order-summary-item:last-child {
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 18px;
+    color: #27ae60;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 2px solid #e0e0e0;
+    }
+
+    .place-order-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+    }
+
+    .place-order-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
+    }
+
+    .back-btn {
+    display: inline-flex;
+    align-items: center;
+    color: #27ae60;
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 20px;
+    transition: color 0.3s ease;
+    }
+
+    .back-btn:hover {
+    transform: translateY(-2px);
+    }
+
+    .back-btn i {
+    margin-right: 8px;
+    }
+
+    @media (max-width: 768px) {
+    .order-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 15px;
+    }
+
+    .order-form, .order-summary {
+        padding: 20px;
+    }
+
+    .section-title {
+        font-size: 20px;
+    }
+    }

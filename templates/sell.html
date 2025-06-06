@@ -295,10 +295,10 @@
 
                 <div class="form-group">
                   <label for="price"
-                    >Item Price <span class="required">*</span></label
+                    >Item Price (RM) <span class="required">*</span></label
                   >
                   <div class="price-input">
-                    <span class="currency-symbol">RM </span>
+                    <span class="currency-symbol"></span>
                     <input
                       type="number"
                       id="price"
@@ -311,24 +311,10 @@
                   </div>
                 </div>
 
-                <div class="form-group">
-                  <label for="shipping-method"
-                    >Shipping Method <span class="required">*</span></label
-                  >
-                  <select id="shipping-method" name="shipping_method" required>
-                    <option value="">Select shipping method</option>
-                    <option value="local_pickup">Local Pickup Only</option>
-                    <option value="ship_domestic">Ship Domestically</option>
-                    <option value="ship_international">
-                      Ship Internationally
-                    </option>
-                  </select>
-                </div>
-
-                <div class="form-group shipping-cost" style="display: none">
-                  <label for="shipping-cost">Shipping Cost</label>
+                <div class="form-group shipping-cost">
+                  <label for="shipping-cost">Shipping Cost (RM) </label>
                   <div class="price-input">
-                    <span class="currency-symbol">RM </span>
+                    <span class="currency-symbol"></span>
                     <input
                       type="number"
                       id="shipping-cost"
@@ -337,25 +323,6 @@
                       min="0"
                       step="0.01"
                     />
-                  </div>
-                  <div class="radio-group shipping-paid-by">
-                    <label class="radio-label">
-                      <input
-                        type="radio"
-                        name="shipping_paid_by"
-                        value="buyer"
-                        checked
-                      />
-                      Paid by buyer
-                    </label>
-                    <label class="radio-label">
-                      <input
-                        type="radio"
-                        name="shipping_paid_by"
-                        value="seller"
-                      />
-                      Free shipping (you pay)
-                    </label>
                   </div>
                 </div>
 
@@ -521,20 +488,6 @@
           });
         });
 
-        // Show/hide shipping cost based on shipping method
-        if (shippingMethod) {
-          shippingMethod.addEventListener("change", function () {
-            if (
-              this.value === "ship_domestic" ||
-              this.value === "ship_international"
-            ) {
-              shippingCostGroup.style.display = "block";
-            } else {
-              shippingCostGroup.style.display = "none";
-            }
-          });
-        }
-
         // Navigation between steps
         function goToStep(step) {
           // Hide all steps
@@ -629,10 +582,9 @@
           document.getElementById("preview-price").textContent = `RM${
             document.getElementById("price").value
           }`;
-          document.getElementById("preview-shipping").textContent =
-            document.getElementById("shipping-method").options[
-              document.getElementById("shipping-method").selectedIndex
-            ].text;
+          document.getElementById("preview-shipping").textContent = `RM${
+            document.getElementById("shipping-cost").value
+          }`;
           document.getElementById("preview-description-text").textContent =
             document.getElementById("description").value;
 

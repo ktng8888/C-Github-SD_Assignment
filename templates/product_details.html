@@ -85,7 +85,16 @@
               </div>
             </div>
             <div class="action-buttons">
-              <button class="buy-now">Buy Now</button>
+                <!-- Check if current user is the seller -->
+                {% if user_data.username == product.seller %}
+                <button class="buy-now disabled" disabled>
+                  <i class="fas fa-info-circle"></i> Your Own Product (You cannot purchase your own product)
+                </button>
+                {% else %}
+                <button class="buy-now" onclick="window.location.href='/order/{{ product.id }}'">
+                  Buy Now
+                </button>
+                {% endif %}
             </div>
           </div>
         </div>

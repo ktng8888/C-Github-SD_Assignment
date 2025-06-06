@@ -313,6 +313,13 @@ body {
     justify-content: center;
 }
 
+.buy-now.disabled {
+    background-color: #ccc;
+    color: black;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 .social-share {
     margin-top: 30px;
     display: flex;

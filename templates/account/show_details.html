@@ -299,8 +299,12 @@
                     <span class="info-value">RM {{ "%.2f"|format(product.amount_paid|float) }}</span>
                 </div>
                 <div class="info-row">
+                    <span class="info-label">Delivery Address:</span>
+                    <span class="info-value">{{ product.delivery_address }}</span>
+                </div>
+                <div class="info-row">
                     <span class="info-label">Status:</span>
-                    <span class="info-value">{{ product.order_status|title }}</span>
+                    <span class="info-value">{{ product.order_status }}</span>
                 </div>
                 <div class="info-row {% if not product.delivered_date %}hidden{% endif %}">
                     <span class="info-label">Delivered Date:</span>

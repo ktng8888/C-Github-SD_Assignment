@@ -2,6 +2,7 @@ import random
 import os
 import time
 from abc import ABC, abstractmethod
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -49,7 +50,7 @@ def main():
                     break
                     
                 parts = line.strip().split('||')
-                if len(parts) >= 15:
+                if len(parts) >= 11:
                     # Calculate discount and original price for display purposes
                     # For demonstration, we'll set random discounts between 10-25%
                     import random
@@ -69,13 +70,8 @@ def main():
                         'year': parts[7],
                         'description': parts[8].strip('"'),
                         'price': parts[9],
-                        'current_price': current_price,
-                        'original_price': original_price,
-                        'discount_percent': discount_percent,
-                        'shipping_method': parts[10],
-                        'main_photo': parts[13],
-                        # Create a display badge based on discount or condition
-                        'badge': f"{discount_percent}% OFF" if discount_percent > 15 else "Like New",
+                        'shipping_cost': parts[10],
+                        'main_photo': parts[11],
                         # Add a random rating
                         'rating': round(random.uniform(4.5, 5.0), 1),
                         'review_count': random.randint(10, 60),
@@ -168,7 +164,7 @@ def products():
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 15:
+                if len(parts) >= 11:
                     products.append({
                         'id': parts[0],
                         'seller': parts[1],
@@ -180,7 +176,8 @@ def products():
                         'year': parts[7],
                         'description': parts[8].strip('"'),
                         'price': parts[9],
-                        'main_photo': parts[13]
+                        'shipping_cost':parts[10],
+                        'main_photo': parts[11]
                     })
     except FileNotFoundError:
         pass
@@ -200,7 +197,7 @@ def products():
     for product in products:
         product['is_favorite'] = product['id'] in user_favorites
 
-    # Filter to show only approved products
+    # Show only approved products
     # products = [p for p in products if p['status'] == 'approved']
 
     # Filter by category
@@ -290,6 +287,15 @@ def toggle_favorite():
 @app.route('/product/<product_id>')
 @login_required
 def product_details(product_id):
+
+    user_data = {
+        'username': current_user.username,
+        'email': current_user.email,
+        'phone': current_user.phone if current_user.phone != '-' else '',
+        'address': current_user.address if current_user.address != '-' else '',
+        'profile_image': current_user.profile_image if current_user.profile_image != '-' else None
+    }
+
     product = None
     with open("databases/products.txt", "r") as file:
         for line in file:
@@ -298,10 +304,12 @@ def product_details(product_id):
                 # Convert prices to floats
                 try:
                     price = float(parts[9])
-                    original_price = price * 1.15  # 15% markup for demo
                 except ValueError:
                     price = 0.0
-                    original_price = 0.0
+                try:
+                    shipping_cost = float(parts[10])
+                except ValueError:
+                    shipping_cost = 0.0
                 
                 product = {
                     'id': parts[0],
@@ -314,16 +322,9 @@ def product_details(product_id):
                     'year': parts[7],
                     'description': parts[8].strip('"'),
                     'price': "{:,.2f}".format(price),
-                    'original_price': "{:,.2f}".format(original_price),
-                    'discount_percent': round((1 - (price / original_price)) * 100),
-                    'shipping_method': parts[10].replace('_', ' ').title(),
-                    'shipping_cost': parts[11] if len(parts) > 11 else 'Free',
-                    'shipping_paid_by': parts[12] if len(parts) > 12 else 'Seller',
-                    'main_photo': parts[13],
-                    'additional_photos': parts[14:] if len(parts) > 14 else [],
-                    'quantity': parts[15] if len(parts) > 15 else '1',
-                    'ratings': random.randint(1000, 5000),
-                    'sold': random.randint(500, 2000),
+                    'shipping_cost': "{:,.2f}".format(shipping_cost),
+                    'main_photo': parts[11],
+                    'additional_photos': parts[12:] if len(parts) > 12 else [],
                     'favorites': random.randint(100, 1000)
                 }
                 break
@@ -331,7 +332,178 @@ def product_details(product_id):
     if not product:
         abort(404)
         
-    return render_template('product_details.html', product=product)
+    return render_template('product_details.html', product=product, user_data = user_data)
+
+@app.route('/order/<product_id>')
+@login_required
+def product_order(product_id):
+    # Get the same product data for the order page
+    user_data = {
+        'username': current_user.username,
+        'email': current_user.email,
+        'phone': current_user.phone if current_user.phone != '-' else '',
+        'address': current_user.address if current_user.address != '-' else '',
+        'profile_image': current_user.profile_image if current_user.profile_image != '-' else None
+    }
+    
+    product = None
+    with open("databases/products.txt", "r") as file:
+        for line in file:
+            parts = line.strip().split('||')
+            if parts[0] == product_id:
+                # Convert prices to floats for calculations
+                try:
+                    price = float(parts[9])
+                except ValueError:
+                    price = 0.0
+
+                try:
+                    shipping_cost = float(parts[10])
+                except ValueError:
+                    shipping_cost = 0.0
+                
+                product = {
+                    'id': parts[0],
+                    'seller': parts[1],
+                    'category': parts[2],
+                    'status': parts[3],
+                    'title': parts[4],
+                    'brand': parts[5],
+                    'model': parts[6],
+                    'year': parts[7],
+                    'description': parts[8].strip('"'),
+                    'price': price, 
+                    'shipping_cost': shipping_cost,
+                    'main_photo': parts[11],
+                    'additional_photos': parts[12:] if len(parts) > 12 else []
+                }
+                break
+                
+    if not product:
+        abort(404)
+    
+    # CHECK 1: Prevent ordering sold products
+    if product['status'].lower() == 'sold':
+        flash('This product has already been sold!', 'error')
+        return redirect(url_for('product_details', product_id=product_id))
+    
+    # CHECK 2: Prevent seller from accessing their own product order page
+    if user_data.get('username') == product['seller']:
+        flash('You cannot order your own product!', 'error')
+        return redirect(url_for('product_details', product_id=product_id))
+    
+    return render_template('product_order.html', product=product, user_data = user_data)
+
+
+@app.route('/handle_order/<product_id>', methods=['GET', 'POST'])
+@login_required
+def handle_order(product_id):
+    if request.method == 'POST':
+        buyer_username = request.form.get('buyer_username')
+        payment_method = request.form.get('payment_method')
+        delivery_address = request.form.get('delivery_address')
+        
+        # Basic validation
+        if not payment_method:
+            flash('Please select a payment method', 'error')
+            return redirect(url_for('product_order', product_id=product_id))
+            
+        if not delivery_address or not delivery_address.strip():
+            flash('Please enter your delivery address', 'error')
+            return redirect(url_for('product_order', product_id=product_id))
+
+        # Get product details to calculate total
+        product = None
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if parts[0] == product_id:
+                    try:
+                        price = float(parts[9])
+                        shipping_cost = float(parts[10])
+                        product = {
+                            'id': parts[0],
+                            'seller': parts[1],
+                            'title': parts[4],
+                            'price': price,
+                            'shipping_cost': shipping_cost
+                        }
+                        break
+                    except (ValueError, IndexError):
+                        flash('Error reading product data', 'error')
+                        return redirect(url_for('home'))
+        
+        if not product:
+            flash('Product not found', 'error')
+            return redirect(url_for('home'))
+
+        # Ensure the database directory exists
+        database_dir = "databases"
+        os.makedirs(database_dir, exist_ok=True)
+
+        # Generate order ID
+        orders_file = os.path.join(database_dir, "orders.txt")
+        
+        # If file doesn't exist, start with ID 1
+        if not os.path.exists(orders_file):
+            order_id = "1"
+        else:
+            # Read the file to find the highest existing ID
+            highest_id = 0
+            try:
+                with open(orders_file, "r") as file:
+                    for line in file:
+                        parts = line.strip().split('||')
+                        if parts and parts[0].isdigit():
+                            current_id = int(parts[0])
+                            if current_id > highest_id:
+                                highest_id = current_id
+                
+                # Next ID is highest + 1
+                order_id = str(highest_id + 1)
+            except Exception as e:
+                print(f"Error reading orders file: {e}")
+                # If there's an issue, start with ID 1
+                order_id = "1"
+
+        # Calculate payment amount
+        payment_amount = product['price'] + product['shipping_cost']
+        
+        # Get current timestamp
+        from datetime import datetime
+        order_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        status = "shipping"
+        delivered_date = "-"
+        
+        # Write order to file
+        try:
+            with open(orders_file, "a") as file:
+                file.write(f'{order_id}||{buyer_username}||{product_id}||{order_time}||{payment_method}||{payment_amount}||{delivery_address}||{status}||{delivered_date}\n')
+            
+            products_file = "databases/products.txt"
+            
+            # Read all products
+            updated_lines = []
+            with open(products_file, "r") as file:
+                for line in file:
+                    parts = line.strip().split('||')
+                    if parts[0] == product_id:
+                        # Change status from 'pending' to 'sold' (parts[3])
+                        parts[3] = 'sold'
+                        updated_lines.append('||'.join(parts) + '\n')
+                    else:
+                        updated_lines.append(line)
+            
+            # Write back all products with updated status
+            with open(products_file, "w") as file:
+                file.writelines(updated_lines)
+
+            
+        except Exception as e:
+            flash('Error placing order. Please try again.', 'error')
+    
+    return redirect(url_for('account_orders', tab='shipping'))
 
 @app.route('/sell', methods=['GET', 'POST'])
 @login_required
@@ -345,9 +517,7 @@ def sell():
         year = request.form.get('year')
         description = request.form.get('description')
         price = request.form.get('price')
-        shipping_method = request.form.get('shipping_method')
         shipping_cost = request.form.get('shipping_cost', 0)
-        shipping_paid_by = request.form.get('shipping_paid_by', 'buyer')
         status = "pending"
 
         # Ensure the database directory exists
@@ -405,7 +575,7 @@ def sell():
     
         with open("databases/products.txt", "a") as file:
             file.write(f'{listing_id}||{current_user.id}||{category}||{status}||{title}||{brand}||{model}||{year}||'
-                    f'"{description}"||{price}||{shipping_method}||{shipping_cost}||{shipping_paid_by}||'
+                    f'"{description}"||{price}||{shipping_cost}||'
                     f'{main_photo_filename}||{"||".join(additional_photo_filenames)}\n')
 
         # Flash a success message
@@ -450,7 +620,7 @@ def account_profile():
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 13:
+                if len(parts) >= 11:
                     product_id = parts[0]
 
                     product = {
@@ -465,7 +635,7 @@ def account_profile():
                         'description': parts[8].strip('"'),
                         'price': parts[9],
                         'shipping_method': parts[10],
-                        'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg"
+                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg"
                     }
 
                     if parts[1] == current_user.id:
@@ -596,7 +766,7 @@ def account_listings():
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 15 and parts[1] == current_user.id:
+                if len(parts) >= 11 and parts[1] == current_user.id:
                     product = {
                         'id': parts[0],
                         'seller': parts[1],
@@ -608,8 +778,8 @@ def account_listings():
                         'year': parts[7],
                         'description': parts[8].strip('"'),
                         'price': parts[9],
-                        'shipping_method': parts[10],
-                        'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg"
+                        'shipping_cost': parts[10],
+                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg"
                     }
                     # Select and execute the appropriate strategy
                     strategy = ProductStrategyFactory.get_strategy(product['status'])
@@ -668,7 +838,7 @@ def account_sold():
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 15 and parts[1] == current_user.id and parts[3] == 'sold':
+                if len(parts) >= 11 and parts[1] == current_user.id and parts[3] == 'sold':
                     product_id = parts[0]  # Define product_id here
                     
                     if product_id in order_record:
@@ -685,9 +855,9 @@ def account_sold():
                             'year': parts[7],
                             'description': parts[8].strip('"'),
                             'price': parts[9],
-                            'shipping_method': parts[10],
-                            'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg",
-                            'additional_photos': parts[14:] if len(parts) > 14 else [],
+                            'shipping_cost': parts[10],
+                            'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg",
+                            'additional_photos': parts[12:] if len(parts) > 12 else [],
 
                             # Add order information
                             'order_id': order_info['order_id'],
@@ -731,7 +901,7 @@ def account_favorites():
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 13:
+                if len(parts) >= 11:
                     product_id = parts[0]
                     
                     # Only include products that user has favorited
@@ -747,8 +917,8 @@ def account_favorites():
                             'year': parts[7],
                             'description': parts[8].strip('"'),
                             'price': parts[9],
-                            'shipping_method': parts[10],
-                            'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg"
+                            'shipping_cost': parts[10],
+                            'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg"
                         }
                         favorite_products.append(product)
     except FileNotFoundError:
@@ -806,15 +976,16 @@ def account_orders():
         with open("databases/orders.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 7 and parts[1] == current_user.id:  # user_id matches
+                if len(parts) >= 8 and parts[1] == current_user.id:  # user_id matches
                     product_id = parts[2]
                     user_orders[product_id] = {
                         'order_id': parts[0],
                         'order_date': parts[3],
                         'payment_method': parts[4],
                         'amount_paid': parts[5],
-                        'status': parts[6],
-                        'delivered_date': parts[7] if len(parts) > 7 and parts[7] else None
+                        'delivery_address': parts[6],
+                        'status': parts[7],
+                        'delivered_date': parts[8] if len(parts) >8 and parts[8] else None
                     }
     except FileNotFoundError:
         pass
@@ -824,7 +995,7 @@ def account_orders():
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 13:
+                if len(parts) >= 11:
                     product_id = parts[0]
                     
                     # Only include products that current user has ordered
@@ -841,14 +1012,15 @@ def account_orders():
                             'year': parts[7],
                             'description': parts[8].strip('"'),
                             'price': parts[9],
-                            'shipping_method': parts[10],
-                            'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg",
+                            'shipping_cost': parts[10],
+                            'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg",
                             
                             # Add order information
                             'order_id': order_info['order_id'],
                             'order_date': order_info['order_date'],
                             'payment_method': order_info['payment_method'],
                             'amount_paid': order_info['amount_paid'],
+                            'delivery_address': order_info['delivery_address'],
                             'order_status': order_info['status'],
                             'delivered_date': order_info['delivered_date'],
                             'sold_date': order_info['delivered_date'] if order_info['delivered_date'] else order_info['order_date']
@@ -888,7 +1060,7 @@ def product_details_modal(product_id):
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 15 and parts[0] == product_id:
+                if len(parts) >= 11 and parts[0] == product_id:
                     product = {
                         'id': parts[0],
                         'seller': parts[1],
@@ -900,9 +1072,9 @@ def product_details_modal(product_id):
                         'year': parts[7],
                         'description': parts[8].strip('"'),
                         'price': float(parts[9]),
-                        'shipping_method': parts[10],
-                        'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg",
-                        'additional_photos': parts[14:] if len(parts) > 14 else [],
+                        'shipping_cost': parts[10],
+                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg",
+                        'additional_photos': parts[12:] if len(parts) > 12 else [],
                     }
                     break
     except FileNotFoundError:
@@ -928,7 +1100,7 @@ def product_details_modal(product_id):
         with open("databases/orders.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 7 and parts[2] == product_id:
+                if len(parts) >= 8 and parts[2] == product_id:
                     # Check if this is relevant to current user (either as seller or buyer)
                     if parts[1] == current_user.id or product['seller'] == current_user.id:
                         order_info = {
@@ -937,8 +1109,9 @@ def product_details_modal(product_id):
                             'order_date': parts[3],
                             'payment_method': parts[4],
                             'amount_paid': float(parts[5]),
-                            'status': parts[6],
-                            'delivered_date': parts[7] if parts[7] else None
+                            'delivery_address':parts[6],
+                            'status': parts[7],
+                            'delivered_date': parts[8] if parts[8] else None
                         }
                         break
     except FileNotFoundError:
@@ -951,6 +1124,7 @@ def product_details_modal(product_id):
             'buyer_username': order_info['buyer_username'],
             'order_date': order_info['order_date'],
             'payment_method': order_info['payment_method'],
+            'delivery_address': order_info['delivery_address'],
             'amount_paid': order_info['amount_paid'],
             'order_status': order_info['status'],
             'delivered_date': order_info['delivered_date']
