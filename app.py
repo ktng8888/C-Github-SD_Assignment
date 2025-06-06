@@ -210,7 +210,8 @@ def products():
     if search_query:
         products = [p for p in products 
                    if search_query in p['title'].lower() or 
-                      search_query in p['description'].lower()]
+                      search_query in p['brand'].lower() or
+                      search_query in p['model'].lower()]
 
     # Sorting functionality
     sort = request.args.get('sort', 'newest')
