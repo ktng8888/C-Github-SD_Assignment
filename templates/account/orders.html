@@ -41,12 +41,12 @@
               <i class="fas fa-credit-card"></i> {{ order.payment_method }}
             </div>
             <div class="product-actions">
-              <a href="#" class="action-btn details-btn">
+              <button onclick="openProductModal('{{ order.id }}')" class="action-btn details-btn">
                 <i class="fas fa-info-circle"></i> Track Order
-              </a>
-              <a href="#" class="action-btn contact-btn">
-                <i class="fas fa-message"></i> Contact Seller
-              </a>
+              </button>
+              <button onclick="markAsCompleted('{{ order.order_id }}')" class="action-btn complete-btn">
+                <i class="fas fa-check-circle"></i> Mark as Completed
+              </button>
             </div>
           </div>
         </div>
@@ -71,6 +71,9 @@
           <div class="product-image">
             <img src="{{ order.main_photo }}" alt="{{ order.title }}" />
             <div class="completed-badge">✔️ Completed</div>
+            {% if not order.feedback_submitted %}
+            <div class="feedback-badge">✏️ Feedback Needed</div>
+            {% endif %}
           </div>
           <div class="product-details">
             <div class="product-title">{{ order.title }}</div>
@@ -86,7 +89,35 @@
                 Completed on {{ order.order_date }}
               {% endif %}
             </div>
-
+            
+            {% if not order.feedback_submitted %}
+            <div class="feedback-form" id="feedback-form-{{ order.order_id }}">
+              <h4>Leave Feedback</h4>
+              <form onsubmit="submitFeedback(event, '{{ order.order_id }}')">
+                <div class="rating">
+                  <span>Rating:</span>
+                  <select name="rating" required>
+                    <option value="">Select rating</option>
+                    <option value="5">★★★★★ (5)</option>
+                    <option value="4">★★★★☆ (4)</option>
+                    <option value="3">★★★☆☆ (3)</option>
+                    <option value="2">★★☆☆☆ (2)</option>
+                    <option value="1">★☆☆☆☆ (1)</option>
+                  </select>
+                </div>
+                <div class="feedback-text">
+                  <textarea name="feedback" placeholder="Share your experience..." required></textarea>
+                </div>
+                <button type="submit" class="submit-feedback-btn">
+                  <i class="fas fa-paper-plane"></i> Submit Feedback
+                </button>
+              </form>
+            </div>
+            {% else %}
+            <div class="feedback-thanks">
+              <i class="fas fa-check-circle"></i> Thank you for your feedback!
+            </div>
+            {% endif %}
           </div>
         </div>
         {% endfor %}
@@ -168,6 +199,21 @@
     font-weight: bold;
     text-transform: uppercase;
 }
+
+.feedback-badge {
+    position: absolute;
+    top: 36px;
+    right: 10px;
+    background-color: #fef3c7;
+    color: #d97706;
+    padding: 6px 12px;
+    border: 1px solid #fcd34d;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
 .product-card {
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -176,6 +222,134 @@
 .product-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.product-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.action-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.details-btn {
+    background-color: #e0e7ff;
+    color: #4f46e5;
+}
+
+.details-btn:hover {
+    background-color: #c7d2fe;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
+}
+
+.complete-btn {
+    background-color: #10b981;
+    color: white;
+}
+
+.complete-btn:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);
+}
+
+.feedback-form {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.feedback-form h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1e293b;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.rating {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rating span {
+    font-weight: 500;
+    color: #334155;
+}
+
+.rating select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background-color: #f8fafc;
+    font-size: 14px;
+}
+
+
+.feedback-text textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background-color: #f8fafc;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.submit-feedback-btn {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.submit-feedback-btn:hover {
+    background-color: #4338ca;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
+}
+
+.feedback-thanks {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #d1fae5;
+    color: #065f46;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 /* Modal Styles */
@@ -284,6 +458,40 @@
 </style>
 
 <script>
+function markAsCompleted(orderId) {
+    if (confirm("Are you sure you want to mark this order as completed?")) {
+        fetch(`/complete_order/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Error marking order as completed");
+            }
+        });
+    }
+}
+
+function submitFeedback(event, orderId) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    fetch(`/submit_feedback/${orderId}`, {
+        method: 'POST',
+        body: formData
+    }).then(response => {
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert("Error submitting feedback");
+        }
+    });
+}
+
 function openProductModal(productId) {
     // Set the iframe source to load the product details page
     const iframe = document.getElementById('productDetailsFrame');

@@ -25,6 +25,50 @@ class User(UserMixin):
         self.address = address
         self.profile_image = profile_image
 
+def get_feedback_for_seller(seller_id):
+    feedbacks = []
+    try:
+        with open("databases/feedback.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 8 and parts[3] == seller_id:  # parts[3] 是卖家ID
+                    feedbacks.append({
+                        'buyer_username': parts[4],
+                        'rating': int(parts[5]),
+                        'comment': parts[6],
+                        'timestamp': parts[7]
+                    })
+    except FileNotFoundError:
+        pass
+    return feedbacks
+
+def get_product_by_id(product_id):
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 11 and part[0] == product_id:
+
+                    product = {
+                        'id': parts[0],
+                        'seller': parts[1],
+                        'category': parts[2],
+                        'status': parts[3],
+                        'title': parts[4],
+                        'brand': parts[5],
+                        'model': parts[6],
+                        'year': parts[7],
+                        'description': parts[8].strip('"'),
+                        'price': parts[9],
+                        'shipping_method': parts[10],
+                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg"
+                    }
+                    return product
+    except FileNotFoundError:
+        return None
+    
+    return None 
+
 @login_manager.user_loader
 def load_user(username):
     with open("databases/member_detail.txt", "r") as file:
@@ -210,8 +254,7 @@ def products():
     if search_query:
         products = [p for p in products 
                    if search_query in p['title'].lower() or 
-                      search_query in p['brand'].lower() or
-                      search_query in p['model'].lower()]
+                      search_query in p['description'].lower()]
 
     # Sorting functionality
     sort = request.args.get('sort', 'newest')
@@ -288,7 +331,6 @@ def toggle_favorite():
 @app.route('/product/<product_id>')
 @login_required
 def product_details(product_id):
-
     user_data = {
         'username': current_user.username,
         'email': current_user.email,
@@ -332,8 +374,14 @@ def product_details(product_id):
                 
     if not product:
         abort(404)
+    
+    # Get feedback for the seller of this product
+    seller_feedbacks = get_feedback_for_seller(product['seller'])
         
-    return render_template('product_details.html', product=product, user_data = user_data)
+    return render_template('product_details.html', 
+                         product=product, 
+                         user_data=user_data,
+                         seller_feedbacks=seller_feedbacks)
 
 @app.route('/order/<product_id>')
 @login_required
@@ -393,7 +441,13 @@ def product_order(product_id):
         flash('You cannot order your own product!', 'error')
         return redirect(url_for('product_details', product_id=product_id))
     
-    return render_template('product_order.html', product=product, user_data = user_data)
+    # Get seller's feedback
+    seller_feedbacks = get_feedback_for_seller(product['seller'])
+    
+    return render_template('product_order.html', 
+                         product=product, 
+                         user_data=user_data,
+                         seller_feedbacks=seller_feedbacks)
 
 
 @app.route('/handle_order/<product_id>', methods=['GET', 'POST'])
@@ -595,8 +649,41 @@ def messages():
 @app.route('/account')
 @login_required
 def account():
-    return render_template('account/account.html', active_page='profile')
-
+    # 获取当前用户作为卖家收到的反馈
+    feedbacks = []
+    try:
+        with open("databases/feedback.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 8 and parts[3] == current_user.id:  # parts[3]是卖家用户名
+                    # 获取商品名称
+                    product_title = "未知商品"
+                    try:
+                        with open("databases/products.txt", "r") as prod_file:
+                            for prod_line in prod_file:
+                                prod_parts = prod_line.strip().split('||')
+                                if len(prod_parts) >= 5 and prod_parts[0] == parts[2]:  # 商品ID匹配
+                                    product_title = prod_parts[4]  # 商品标题
+                                    break
+                    except FileNotFoundError:
+                        pass
+                    
+                    feedbacks.append({
+                        'buyer_username': parts[4],  # 买家用户名
+                        'product_title': product_title,
+                        'rating': parts[5],  # 添加评分
+                        'comment': parts[6],  # 评价内容
+                        'timestamp': parts[7]  # 添加时间戳
+                    })
+    except FileNotFoundError:
+        print("Feedback file not found")  # 调试信息
+        pass
+    
+    print(f"Found {len(feedbacks)} feedbacks for user {current_user.id}")  # 调试信息
+    
+    return render_template('account/account.html',
+                         active_page='profile',
+                         feedbacks=feedbacks)
 @app.route('/account/profile')
 @login_required
 def account_profile():
@@ -607,7 +694,9 @@ def account_profile():
     favorite_products = []
     sold_products = []
     user_favorites = []
-
+    feedbacks = []
+    
+ 
     try:
         with open("databases/favorites.txt", "r") as file:
             for line in file:
@@ -650,6 +739,33 @@ def account_profile():
     except FileNotFoundError:
         pass
     
+    try:
+        with open("databases/feedback.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 8 and parts[3] == current_user.id:  # parts[3] is seller username
+                    # Get product title
+                    product_title = "Unknown Product"
+                    try:
+                        with open("databases/products.txt", "r") as prod_file:
+                            for prod_line in prod_file:
+                                prod_parts = prod_line.strip().split('||')
+                                if len(prod_parts) >= 5 and prod_parts[0] == parts[2]:  # product ID match
+                                    product_title = prod_parts[4]  # product title
+                                    break
+                    except FileNotFoundError:
+                        pass
+                    
+                    feedbacks.append({
+                        'buyer_username': parts[4],
+                        'product_title': product_title,
+                        'rating': parts[5],
+                        'comment': parts[6],
+                        'timestamp': parts[7]
+                    })
+    except FileNotFoundError:
+        pass
+    
     seller_total_products.sort(key=lambda x: int(x['id']), reverse=True)
     favorite_products.sort(key=lambda x: int(x['id']), reverse=True)
     sold_products.sort(key=lambda x: int(x['id']), reverse=True)
@@ -657,16 +773,19 @@ def account_profile():
     seller_total_products_count = len(seller_total_products)
     favorite_count = len(favorite_products)
     sold_count = len(sold_products) 
+    
 
     return render_template('account/account.html', active_page='profile',
-                           active_tab = active_tab,
-                           user_profile_image = user_profile_image,
-                           seller_total_products = seller_total_products,
-                           favorite_products = favorite_products,
-                           sold_products = sold_products,
-                           seller_total_products_count = seller_total_products_count,
-                           favorite_count = favorite_count,
-                           sold_count = sold_count)
+                         active_tab=active_tab,
+                         user_profile_image=user_profile_image,
+                         seller_total_products=seller_total_products,
+                         favorite_products=favorite_products,
+                         sold_products=sold_products,
+                         seller_total_products_count=seller_total_products_count,
+                         favorite_count=favorite_count,
+                         sold_count=sold_count,
+                         feedbacks=feedbacks,  # Add this line
+                         feedback_count=len(feedbacks))  # Add this line
 
 '''
 @app.route('/account/posts')
@@ -991,6 +1110,17 @@ def account_orders():
     except FileNotFoundError:
         pass
     
+    # Check which orders have feedback
+    feedback_exists = set()
+    try:
+        with open("databases/feedback.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 5 and parts[4] == current_user.id:  # buyer matches
+                    feedback_exists.add(parts[1])  # order_id
+    except FileNotFoundError:
+        pass
+    
     # Then get product details and combine with order info
     try:
         with open("databases/products.txt", "r") as file:
@@ -1024,7 +1154,8 @@ def account_orders():
                             'delivery_address': order_info['delivery_address'],
                             'order_status': order_info['status'],
                             'delivered_date': order_info['delivered_date'],
-                            'sold_date': order_info['delivered_date'] if order_info['delivered_date'] else order_info['order_date']
+                            'sold_date': order_info['delivered_date'] if order_info['delivered_date'] else order_info['order_date'],
+                            'feedback_submitted': order_info['order_id'] in feedback_exists
                         }
                         
                         # Sort into appropriate lists based on status
@@ -1084,6 +1215,9 @@ def product_details_modal(product_id):
     if not product:
         return "Product not found", 404
     
+    # Get seller feedbacks
+    seller_feedbacks = get_feedback_for_seller(product['seller'])
+    
     # Check if product is in user's favorites
     is_favorited = False
     try:
@@ -1142,7 +1276,10 @@ def product_details_modal(product_id):
         'is_favorited': is_favorited
     }
     
-    return render_template('account/show_details.html', product=product, context=context)
+    return render_template('account/show_details.html', 
+                         product=product,
+                         context=context,
+                         seller_feedbacks=seller_feedbacks)
 
 @app.route('/account/settings', methods=['GET', 'POST'])
 @login_required
@@ -1250,5 +1387,242 @@ def account_settings():
                          active_page='settings', 
                          user_data=user_data)
 
+
+# WILLIAM Admin Order Management
+@app.route('/order-management')
+def order_management():
+    orders = []
+
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    min_price = request.args.get('min_price', type=float)
+    max_price = request.args.get('max_price', type=float)
+
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 8:
+                    order = {
+                        'order_id': parts[0],
+                        'buyer_username': parts[1],
+                        'product_id': parts[2],
+                        'order_date': parts[3],
+                        'payment_method': parts[4],
+                        'amount_paid': float(parts[5]),
+                        'status': parts[6],
+                        'delivered_date': parts[7] if parts[7] else None
+                    }
+
+                    # Apply filters
+                    include = True
+
+                    if start_date:
+                        try:
+                            order_dt = datetime.strptime(order['order_date'], "%Y-%m-%d")
+                            if order_dt < datetime.strptime(start_date, "%Y-%m-%d"):
+                                include = False
+                        except:
+                            pass
+
+                    if end_date:
+                        try:
+                            order_dt = datetime.strptime(order['order_date'], "%Y-%m-%d")
+                            if order_dt > datetime.strptime(end_date, "%Y-%m-%d"):
+                                include = False
+                        except:
+                            pass
+
+                    if min_price is not None and order['amount_paid'] < min_price:
+                        include = False
+
+                    if max_price is not None and order['amount_paid'] > max_price:
+                        include = False
+
+                    if include:
+                        orders.append(order)
+    except FileNotFoundError:
+        pass
+
+    return render_template('admin_orders.html', orders=orders)
+
+#William function feedback 
+@app.route('/complete_order/<order_id>', methods=['POST'])
+@login_required
+def complete_order(order_id):
+    # Update the order status in orders.txt
+    updated_lines = []
+    order_found = False
+    
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 8 and parts[0] == order_id:
+                    # Update status to 'completed' and set delivered date
+                    parts[7] = 'completed'
+                    parts[8] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    updated_lines.append('||'.join(parts) + '\n')
+                    order_found = True
+                else:
+                    updated_lines.append(line)
+        
+        if order_found:
+            with open("databases/orders.txt", "w") as file:
+                file.writelines(updated_lines)
+            
+            flash("Order marked as completed!", "success")
+        else:
+            flash("Order not found", "error")
+            
+    except Exception as e:
+        flash("Error updating order status", "error")
+    
+    return redirect(url_for('account_orders', tab='shipping'))
+
+@app.route('/submit_feedback/<order_id>', methods=['POST'])
+@login_required
+def submit_feedback(order_id):
+    rating = request.form.get('rating')
+    feedback_text = request.form.get('feedback')
+    
+    if not rating or not feedback_text:
+        flash("Please provide both rating and feedback", "error")
+        return redirect(url_for('account_orders', tab='completed'))
+    
+    # 确保数据目录存在
+    os.makedirs("databases", exist_ok=True)
+    
+    # 获取订单详情
+    order_info = None
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 9 and parts[0] == order_id:  # 修复：确保有足够的字段
+                    order_info = {
+                        'order_id': parts[0],
+                        'buyer_username': parts[1],
+                        'product_id': parts[2],
+                        'seller_username': None
+                    }
+                    break
+    except FileNotFoundError:
+        flash("Orders file not found", "error")
+        return redirect(url_for('account_orders', tab='completed'))
+    
+    if not order_info:
+        flash("Order not found", "error")
+        return redirect(url_for('account_orders', tab='completed'))
+    
+    # 从产品信息获取卖家用户名
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 11 and parts[0] == order_info['product_id']:
+                    order_info['seller_username'] = parts[1]
+                    break
+    except FileNotFoundError:
+        flash("Products file not found", "error")
+        return redirect(url_for('account_orders', tab='completed'))
+    
+    if not order_info['seller_username']:
+        flash("Product seller not found", "error")
+        return redirect(url_for('account_orders', tab='completed'))
+    
+    # 获取下一个反馈ID
+    feedback_id = 1
+    try:
+        with open("databases/feedback.txt", "r") as file:
+            lines = file.readlines()
+            if lines:
+                for line in reversed(lines):  # 从后往前读，找到最大ID
+                    parts = line.strip().split('||')
+                    if parts and parts[0].isdigit():
+                        feedback_id = int(parts[0]) + 1
+                        break
+    except FileNotFoundError:
+        pass
+    
+    # 保存反馈数据
+    # 格式：feedback_id||order_id||product_id||seller_username||buyer_username||rating||comment||timestamp
+    feedback_data = [
+        str(feedback_id),
+        order_info['order_id'],
+        order_info['product_id'],
+        order_info['seller_username'],
+        current_user.id,  # buyer_username
+        rating,
+        feedback_text,
+        datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    ]
+    
+    try:
+        with open("databases/feedback.txt", "a") as file:
+            file.write('||'.join(feedback_data) + '\n')
+        flash("Thank you for your feedback!", "success")
+        print(f"Feedback saved: {feedback_data}")  # 调试信息
+    except Exception as e:
+        flash(f"Error submitting feedback: {str(e)}", "error")
+        print(f"Error saving feedback: {e}")  # 调试信息
+    
+    return redirect(url_for('account_orders', tab='completed'))
+
+
+@app.route('/debug/feedback')
+@login_required
+def debug_feedback():
+    feedbacks = []
+    try:
+        with open("databases/feedback.txt", "r") as file:
+            for line_num, line in enumerate(file, 1):
+                parts = line.strip().split('||')
+                feedbacks.append({
+                    'line_number': line_num,
+                    'raw_data': line.strip(),
+                    'parsed_parts': parts,
+                    'parts_count': len(parts)
+                })
+    except FileNotFoundError:
+        return "Feedback file not found"
+    
+    return f"<pre>{feedbacks}</pre>"
+
+# 5. 修复获取卖家反馈的API
+@app.route('/get_seller_feedback')
+def get_seller_feedback():
+    seller = request.args.get('seller')
+    if not seller:
+        return jsonify({'error': 'Seller username is required'}), 400
+    
+    feedbacks = []
+    try:
+        with open("databases/feedback.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 8 and parts[3] == seller:
+                    try:
+                        feedbacks.append({
+                            'buyer_username': parts[4],
+                            'rating': int(parts[5]),
+                            'comment': parts[6],
+                            'timestamp': parts[7]
+                        })
+                    except (ValueError, IndexError) as e:
+                        print(f"Error parsing feedback line: {line}. Error: {e}")
+                        continue
+    except FileNotFoundError:
+        return jsonify({'error': 'Feedback file not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error reading feedback: {str(e)}'}), 500
+    
+    return jsonify({
+        'seller': seller,
+        'feedbacks': feedbacks,
+        'count': len(feedbacks)
+    })
+    
 if __name__ == '__main__':
     app.run(debug=True)
+    

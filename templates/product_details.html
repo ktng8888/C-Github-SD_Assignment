@@ -39,8 +39,7 @@
               class="main-image"
             />
 
-            {% if product.additional_photos and product.additional_photos|length
-            > 0 %}
+            {% if product.additional_photos and product.additional_photos|length > 0 %}
             <div class="image-thumbnails">
               <!-- Main photo thumbnail -->
               <img
@@ -50,13 +49,15 @@
               />
 
               <!-- Additional photo thumbnails -->
-              {% for photo in product.additional_photos %} {% if photo %}
+              {% for photo in product.additional_photos %} 
+              {% if photo %}
               <img
                 src="{{ url_for('static', filename='uploads/product_images/' + photo) }}"
                 alt="Thumbnail {{ loop.index }}"
                 class="thumbnail"
               />
-              {% endif %} {% endfor %}
+              {% endif %} 
+              {% endfor %}
             </div>
             {% endif %}
           </div>
@@ -66,11 +67,25 @@
             <h1 class="product-title">{{ product.title }}</h1>
 
             <div class="product-ratings">
-              <div class="ratings-stars">★★★★★</div>
-              <div class="ratings-count">
-                {{ product.review_count }} Ratings
-              </div>
-              <div class="sold-count">{{ product.sold_count }} Sold</div>
+              {% if seller_feedbacks and seller_feedbacks|length > 0 %}
+                {% set total_rating = seller_feedbacks|sum(attribute='rating') %}
+                {% set avg_rating = total_rating / seller_feedbacks|length %}
+                <div class="ratings-stars">
+                  {% for i in range(5) %}
+                    {% if i < avg_rating|round %}
+                      ★
+                    {% else %}
+                      ☆
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                <div class="ratings-count">
+                  {{ seller_feedbacks|length }} Ratings
+                </div>
+              {% else %}
+                <div class="ratings-stars">☆☆☆☆☆</div>
+                <div class="ratings-count">No ratings yet</div>
+              {% endif %}
             </div>
 
             <div class="product-price">RM{{ product.price }}</div>
@@ -81,14 +96,24 @@
                 <div><strong>Brand:</strong> {{ product.brand }}</div>
                 <div><strong>Model:</strong> {{ product.model }}</div>
                 <div><strong>Year:</strong> {{ product.year }}</div>
-                <div><strong>Seller:</strong> {{ product.seller }}</div>
+                <div>
+                  <strong>Seller:</strong> {{ product.seller }}
+                  <span class="seller-rating">
+                    {% if seller_feedbacks and seller_feedbacks|length > 0 %}
+                      {% set total_rating = seller_feedbacks|sum(attribute='rating') %}
+                      {% set avg_rating = total_rating / seller_feedbacks|length %}
+                      ★ {{ "%.1f"|format(avg_rating) }} ({{ seller_feedbacks|length }})
+                    {% else %}
+                      No ratings yet
+                    {% endif %}
+                  </span>
+                </div>
               </div>
             </div>
             <div class="action-buttons">
-                <!-- Check if current user is the seller -->
                 {% if user_data.username == product.seller %}
                 <button class="buy-now disabled" disabled>
-                  <i class="fas fa-info-circle"></i> Your Own Product (You cannot purchase your own product)
+                  <i class="fas fa-info-circle"></i> Your Own Product
                 </button>
                 {% else %}
                 <button class="buy-now" onclick="window.location.href='/order/{{ product.id }}'">
@@ -98,37 +123,161 @@
             </div>
           </div>
         </div>
+
+        <!-- Seller Feedback Section - Displayed directly on the page -->
+        <div class="feedback-section">
+          <h2 class="section-title">Seller Feedback ({{ seller_feedbacks|length }})</h2>
+          
+          {% if seller_feedbacks and seller_feedbacks|length > 0 %}
+          <div class="feedback-container">
+            {% for feedback in seller_feedbacks %}
+            <div class="feedback-card">
+              <div class="feedback-header">
+                <div class="feedback-meta">
+                  <span class="feedback-buyer">{{ feedback.buyer_username }}</span>
+                  <span class="feedback-date">{{ feedback.timestamp }}</span>
+                </div>
+              </div>
+              
+              <div class="feedback-rating">
+                {% for i in range(5) %}
+                  {% if i < feedback.rating|int %}
+                    <span class="star filled">★</span>
+                  {% else %}
+                    <span class="star">☆</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              
+              <div class="feedback-content">
+                <p>{{ feedback.comment }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty-state">
+            <i class="fas fa-comment-alt"></i>
+            <h3>No feedback yet</h3>
+            <p>This seller hasn't received any feedback yet</p>
+          </div>
+          {% endif %}
+        </div>
       </div>
 
       <div class="chat-button">Chat</div>
       {% include 'footer.html' %}
     </div>
 
+    <style>
+      /* Feedback Section Styles */
+.feedback-section {
+  margin-top: 40px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.feedback-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feedback-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #f0f0f0;
+}
+
+.feedback-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.feedback-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.feedback-buyer {
+  font-weight: 600;
+  color: #333;
+}
+
+.feedback-date {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.feedback-rating {
+  margin: 8px 0 12px;
+}
+
+.star {
+  color: #ddd;
+  font-size: 1.2rem;
+}
+
+.star.filled {
+  color: #FFC107;
+}
+
+.feedback-content p {
+  margin: 0;
+  color: #444;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+/* Empty State Styles */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #888;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  color: #e0e0e0;
+}
+
+.empty-state h3 {
+  margin: 10px 0;
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+    </style>
+
     <script>
       // Thumbnail interaction
       document.querySelectorAll(".thumbnail").forEach((thumb) => {
         thumb.addEventListener("click", function () {
-          document
-            .querySelector(".thumbnail.active")
-            .classList.remove("active");
+          document.querySelector(".thumbnail.active").classList.remove("active");
           this.classList.add("active");
           document.querySelector(".main-image").src = this.src;
-        });
-      });
-
-      // Quantity controls
-      document.querySelectorAll(".quantity-btn").forEach((btn) => {
-        btn.addEventListener("click", function () {
-          const input = document.querySelector(".quantity-input");
-          let value = parseInt(input.value);
-
-          if (this.textContent === "+" && value < 100) {
-            value++;
-          } else if (this.textContent === "-" && value > 1) {
-            value--;
-          }
-
-          input.value = value;
         });
       });
     </script>
