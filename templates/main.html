@@ -90,18 +90,6 @@
             </li>
             <li>
               <a
-                href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('messages') }}"
-                class="nav-button"
-              >
-                <div class="nav-icon">
-                  <i class="fas fa-envelope"></i>
-                </div>
-                <div class="nav-text">Messages</div>
-                <div class="nav-description">Chat with buyers and sellers</div>
-              </a>
-            </li>
-            <li>
-              <a
                 href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('account') }}"
                 class="nav-button"
               >

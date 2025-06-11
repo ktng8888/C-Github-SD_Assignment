@@ -22,9 +22,10 @@
       {% if listing_products and listing_products|length > 0 %}
       <div class="product-grid">
         {% for product in listing_products %}
-        <div class="product-card" onclick="openProductModal('{{ product.id }}')">
+        <div class="product-card" >
           <div class="product-image">
-            <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+            <img src="{{ product.main_photo }}" alt="{{ product.title }}" 
+            onclick="openProductModal('{{ product.id }}')"/>
             <div class="listing-badge">✅Listing</div>
           </div>
           <div class="product-details">
@@ -50,9 +51,10 @@
       {% if pending_products and pending_products|length > 0 %}
       <div class="product-grid">
         {% for product in pending_products %}
-        <div class="product-card" onclick="openProductModal('{{ product.id }}')">
+        <div class="product-card" >
           <div class="product-image">
-            <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+            <img src="{{ product.main_photo }}" alt="{{ product.title }}" 
+            onclick="openProductModal('{{ product.id }}')"/>
             <div class="pending-badge">⏳Pending</div>
           </div>
           <div class="product-details">

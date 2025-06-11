@@ -12,11 +12,12 @@
     <div class="product-grid">
         {% for product in favorite_products %}
         <div class="product-card" data-product-id="{{ product.id }}">
-            <div class="product-image" onclick="openProductModal('{{ product.id }}')">
-            <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+            <div class="product-image" >
+            <img src="{{ product.main_photo }}" alt="{{ product.title }}" 
+            onclick="openProductModal('{{ product.id }}')"/>
             <div class="favorite-badge">♥ FAVORITE</div>
             </div>
-            <div class="product-details" onclick="openProductModal('{{ product.id }}')">
+            <div class="product-details">
             <div class="product-title">{{ product.title }}</div>
             <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
             <div class="seller-info">
@@ -79,8 +80,12 @@
 }
 
 .product-card {
-    cursor: pointer;
+
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card img{
+    cursor: pointer;
 }
 
 .product-card:hover {

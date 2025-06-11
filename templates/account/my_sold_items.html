@@ -11,9 +11,10 @@
     {% if sold_products and sold_products|length > 0 %}
     <div class="product-grid">
         {% for product in sold_products %}
-        <div class="product-card" onclick="openProductModal('{{ product.id }}')">
+        <div class="product-card" >
             <div class="product-image">
-            <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+            <img src="{{ product.main_photo }}" alt="{{ product.title }}" 
+            onclick="openProductModal('{{ product.id }}')"/>
             <div class="sold-badge">💰Sold</div>
             </div>
             <div class="product-details">

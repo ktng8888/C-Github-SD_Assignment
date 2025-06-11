@@ -641,11 +641,6 @@ def sell():
     # If GET request, just render the template
     return render_template('sell.html')
 
-@app.route('/messages')
-@login_required
-def messages():
-    return render_template('messages.html')
-
 @app.route('/account')
 @login_required
 def account():
@@ -939,8 +934,9 @@ def account_sold():
                 order_date = parts[3]
                 payment_method = parts[4]
                 amount_paid = parts[5]
-                status = parts[6]
-                delivered_date = parts[7] if parts[7] else None
+                delivery_address = parts[6],
+                status = parts[7]
+                delivered_date = parts[8] if parts[7] else None
                 
                 order_record[product_id] = {
                     'order_id': order_id,
@@ -948,6 +944,7 @@ def account_sold():
                     'order_date': order_date,
                     'payment_method': payment_method,
                     'amount_paid': amount_paid,
+                    'delivery_address' : delivery_address,
                     'status': status,
                     'delivered_date': delivered_date
                 }
@@ -985,6 +982,7 @@ def account_sold():
                             'order_date': order_info['order_date'],
                             'payment_method': order_info['payment_method'],
                             'amount_paid': order_info['amount_paid'],
+                            'delivery_address' : order_info['delivery_address'],
                             'order_status': order_info['status'],
                             'delivered_date': order_info['delivered_date']
                         }

@@ -71,10 +71,11 @@
                 {% if seller_total_products and seller_total_products|length > 0 %}
                 <div class="product-grid">
                     {% for product in seller_total_products %}
-                    <div class="product-card" onclick="openProductModal('{{ product.id }}')">
+                    <div class="product-card" >
                     <div class="product-image">
-                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
-                        {% if product.status == 'listing' %}
+                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" 
+                        onclick="openProductModal('{{ product.id }}')"/>
+                        {% if product.status == 'approved' %}
                             <div class="listing-badge">✅Listing</div>
                         {% elif product.status == 'pending' %}
                             <div class="pending-badge">⏳Pending</div>
@@ -105,9 +106,10 @@
                 {% if favorite_products and favorite_products|length > 0 %}
                 <div class="product-grid">
                     {% for product in favorite_products %}
-                    <div class="product-card" onclick="openProductModal('{{ product.id }}')">
+                    <div class="product-card" >
                     <div class="product-image">
-                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" 
+                        onclick="openProductModal('{{ product.id }}')"/>
                         <div class="favorite-badge">♥ FAVORITE</div>
                     </div>
                     <div class="product-details">

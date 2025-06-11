@@ -22,14 +22,17 @@
       {% if shipping_orders and shipping_orders|length > 0 %}
       <div class="product-grid">
         {% for order in shipping_orders %}
-        <div class="product-card" onclick="openProductModal('{{ order.id }}')">
+        <div class="product-card" >
           <div class="product-image">
-            <img src="{{ order.main_photo }}" alt="{{ order.title }}" />
+            
+            <img src="{{ order.main_photo }}" alt="{{ order.title }}" 
+            onclick="openProductModal('{{ order.id }}')"/>
+
             <div class="shipping-badge">🚚 Shipping</div>
           </div>
           <div class="product-details">
             <div class="product-title">{{ order.title }}</div>
-            <div class="product-price">${{ order.price }}</div>
+            <div class="product-price">RM {{ "%.2f"|format(order.price|float) }}</div>
             <div class="seller-info">
               <i class="fas fa-user"></i> Seller: {{ order.seller }}
             </div>
@@ -67,9 +70,12 @@
       {% if completed_orders and completed_orders|length > 0 %}
       <div class="product-grid">
         {% for order in completed_orders %}
-        <div class="product-card" onclick="openProductModal('{{ order.id }}')">
+        <div class="product-card" >
           <div class="product-image">
-            <img src="{{ order.main_photo }}" alt="{{ order.title }}" />
+
+            <img src="{{ order.main_photo }}" alt="{{ order.title }}" 
+            onclick="openProductModal('{{ order.id }}')"/>
+
             <div class="completed-badge">✔️ Completed</div>
             {% if not order.feedback_submitted %}
             <div class="feedback-badge">✏️ Feedback Needed</div>
