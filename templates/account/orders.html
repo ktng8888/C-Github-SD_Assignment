@@ -77,9 +77,11 @@
             onclick="openProductModal('{{ order.id }}')"/>
 
             <div class="completed-badge">✔️ Completed</div>
+            <!--
             {% if not order.feedback_submitted %}
             <div class="feedback-badge">✏️ Feedback Needed</div>
             {% endif %}
+          -->
           </div>
           <div class="product-details">
             <div class="product-title">{{ order.title }}</div>
@@ -97,31 +99,13 @@
             </div>
             
             {% if not order.feedback_submitted %}
-            <div class="feedback-form" id="feedback-form-{{ order.order_id }}">
-              <h4>Leave Feedback</h4>
-              <form onsubmit="submitFeedback(event, '{{ order.order_id }}')">
-                <div class="rating">
-                  <span>Rating:</span>
-                  <select name="rating" required>
-                    <option value="">Select rating</option>
-                    <option value="5">★★★★★ (5)</option>
-                    <option value="4">★★★★☆ (4)</option>
-                    <option value="3">★★★☆☆ (3)</option>
-                    <option value="2">★★☆☆☆ (2)</option>
-                    <option value="1">★☆☆☆☆ (1)</option>
-                  </select>
-                </div>
-                <div class="feedback-text">
-                  <textarea name="feedback" placeholder="Share your experience..." required></textarea>
-                </div>
-                <button type="submit" class="submit-feedback-btn">
-                  <i class="fas fa-paper-plane"></i> Submit Feedback
-                </button>
-              </form>
+            <div class="product-actions">
+              <button class="action-btn feedback-btn" onclick="openFeedbackModal('{{ order.order_id }}')">Leave Feedback</button>
             </div>
+
             {% else %}
             <div class="feedback-thanks">
-              <i class="fas fa-check-circle"></i> Thank you for your feedback!
+              <i class="fas fa-check-circle"></i> Thanks for your feedback!
             </div>
             {% endif %}
           </div>
@@ -148,6 +132,19 @@
     </div>
     <div class="modal-body">
       <iframe id="productDetailsFrame" src="" frameborder="0"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback Modal Popup -->
+<div id="feedbackModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle">Leave Feedback</h2>
+      <span class="close" onclick="closeFeedbackModal()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <iframe id="feedbackModalFrame" src="" frameborder="0"></iframe>
     </div>
   </div>
 </div>
@@ -221,8 +218,11 @@
 }
 
 .product-card {
-    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card img{
+    cursor: pointer;
 }
 
 .product-card:hover {
@@ -272,86 +272,24 @@
     box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);
 }
 
-.feedback-form {
-    margin-top: 20px;
-    padding: 20px;
-    background-color: white;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.feedback-form h4 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #1e293b;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.rating {
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.rating span {
-    font-weight: 500;
-    color: #334155;
-}
-
-.rating select {
-    padding: 8px 12px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background-color: #f8fafc;
-    font-size: 14px;
-}
-
-
-.feedback-text textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #cbd5e1;
-    background-color: #f8fafc;
-    resize: vertical;
-    font-family: inherit;
-    font-size: 14px;
-}
-
-.submit-feedback-btn {
-    margin-top: 15px;
-    padding: 10px 20px;
-    background-color: #4f46e5;
+.feedback-btn {
+    background-color: #3b82f6;
     color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
 }
 
-.submit-feedback-btn:hover {
-    background-color: #4338ca;
+.feedback-btn:hover {
+    background-color: #2563eb;
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);
 }
 
 .feedback-thanks {
     margin-top: 15px;
-    padding: 12px;
+    padding: 3px;
     background-color: #d1fae5;
     color: #065f46;
     border-radius: 6px;
     text-align: center;
-    font-weight: 500;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -430,7 +368,8 @@
     overflow: hidden;
 }
 
-#productDetailsFrame {
+#productDetailsFrame,
+#feedbackModalFrame {
     width: 100%;
     height: 100%;
     border: none;
@@ -481,23 +420,6 @@ function markAsCompleted(orderId) {
     }
 }
 
-function submitFeedback(event, orderId) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-    
-    fetch(`/submit_feedback/${orderId}`, {
-        method: 'POST',
-        body: formData
-    }).then(response => {
-        if (response.ok) {
-            window.location.reload();
-        } else {
-            alert("Error submitting feedback");
-        }
-    });
-}
-
 function openProductModal(productId) {
     // Set the iframe source to load the product details page
     const iframe = document.getElementById('productDetailsFrame');
@@ -527,10 +449,44 @@ window.onclick = function(event) {
     }
 }
 
+function openFeedbackModal(orderId) {
+    // Set the iframe source to load the product details page
+    const iframe = document.getElementById('feedbackModalFrame');
+    iframe.src = `/leave_feedback/${orderId}`;
+    
+    // Update modal title
+    document.getElementById('modalTitle').textContent = 'Leave Feebacks';
+    
+    // Show modal
+    document.getElementById('feedbackModal').style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeFeedbackModal() {
+    document.getElementById('feedbackModal').style.display = 'none';
+    document.body.style.overflow = 'auto'; // Restore scrolling
+    
+    // Clear iframe source to stop loading
+    document.getElementById('feedbackModalFrame').src = '';
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+    const productModal = document.getElementById('productModal');
+    const feedbackModal = document.getElementById('feedbackModal');
+    
+    if (event.target === productModal) {
+        closeProductModal();
+    } else if (event.target === feedbackModal) {
+        closeFeedbackModal();
+    }
+}
+
 // Close modal with Escape key
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeProductModal();
+        closeFeedbackModal();
     }
 });
 </script>

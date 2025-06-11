@@ -679,6 +679,7 @@ def account():
     return render_template('account/account.html',
                          active_page='profile',
                          feedbacks=feedbacks)
+
 @app.route('/account/profile')
 @login_required
 def account_profile():
@@ -768,7 +769,6 @@ def account_profile():
     seller_total_products_count = len(seller_total_products)
     favorite_count = len(favorite_products)
     sold_count = len(sold_products) 
-    
 
     return render_template('account/account.html', active_page='profile',
                          active_tab=active_tab,
@@ -1477,6 +1477,33 @@ def complete_order(order_id):
         flash("Error updating order status", "error")
     
     return redirect(url_for('account_orders', tab='shipping'))
+
+@app.route('/leave_feedback/<order_id>')
+@login_required
+def leave_feedback(order_id):
+    order = None
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 8 and parts[0] == order_id:
+                    # Check if this is relevant to current user (either as seller or buyer)
+                    if parts[1] == current_user.id:
+                        order = {
+                            'order_id': parts[0],
+                            'buyer_username': parts[1],
+                            'order_date': parts[3],
+                            'payment_method': parts[4],
+                            'amount_paid': float(parts[5]),
+                            'delivery_address':parts[6],
+                            'status': parts[7],
+                            'delivered_date': parts[8] if parts[8] else None
+                        }
+                        break
+    except FileNotFoundError:
+        pass
+
+    return render_template('account/leave_feedback.html', order = order)
 
 @app.route('/submit_feedback/<order_id>', methods=['POST'])
 @login_required

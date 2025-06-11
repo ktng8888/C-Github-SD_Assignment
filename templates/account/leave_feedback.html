@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Product Details</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .feedback-form {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .feedback-form h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #1e293b;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .rating {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rating span {
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .rating select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+            font-size: 14px;
+        }
+
+
+        .feedback-text textarea {
+            width: 98%;
+            min-height: 280px;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .submit-feedback-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .submit-feedback-btn:hover {
+            background-color: #4338ca;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
+        }
+
+        .feedback-thanks {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #d1fae5;
+            color: #065f46;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="feedback-form" id="feedback-form-{{ order.order_id }}">
+        <form onsubmit="submitFeedback(event, '{{ order.order_id }}')">
+        <div class="rating">
+            <span>Rating:</span>
+            <select name="rating" required>
+            <option value="">Select rating</option>
+            <option value="5">★★★★★ (5)</option>
+            <option value="4">★★★★☆ (4)</option>
+            <option value="3">★★★☆☆ (3)</option>
+            <option value="2">★★☆☆☆ (2)</option>
+            <option value="1">★☆☆☆☆ (1)</option>
+            </select>
+        </div>
+        <div class="feedback-text">
+            <textarea name="feedback" placeholder="Share your experience..." required></textarea>
+        </div>
+        <button type="submit" class="submit-feedback-btn">
+            <i class="fas fa-paper-plane"></i> Submit Feedback
+        </button>
+        </form>
+    </div>
+
+    <script>
+    function submitFeedback(event, orderId) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        fetch(`/submit_feedback/${orderId}`, {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                //window.location.reload();
+                window.parent.closeFeedbackModal();
+                window.parent.location.reload();
+                window.parent.location.href = '/account/orders?tab=completed';
+            } else {
+                alert("Error submitting feedback");
+            }
+        });
+    }
+
+    </script>
+</body>
+</html>

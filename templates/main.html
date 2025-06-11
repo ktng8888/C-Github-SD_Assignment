@@ -90,7 +90,7 @@
             </li>
             <li>
               <a
-                href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('account') }}"
+                href="{{ url_for('require_login') if not current_user.is_authenticated else url_for('account_profile') }}"
                 class="nav-button"
               >
                 <div class="nav-icon">

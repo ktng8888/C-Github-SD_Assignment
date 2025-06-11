@@ -60,8 +60,8 @@
             <div class="tab {% if active_tab == 'favorite' %}active{% endif %}" data-tab="favorite">
             Favorites ({{ favorite_count|default('0') }})
             </div>
-            <div class="tab">
-            Reviews ({{ current_user.reviews_count|default('0') }})
+            <div class="tab" {% if active_tab == 'feedback' %}active{% endif %}" data-tab="feedback">
+            Feedbacks from others ({{ feedback_count|default('0') }})
             </div>
         </div>
         <div class="tab-content">
@@ -127,6 +127,47 @@
                     <p>Your favorite products will appear here</p>
                 </div>
                 {% endif %}
+            </div>
+
+            <div class="tab-pane {% if active_tab == 'feedback' %}active{% endif %}" id="feedback-tab"
+                {% if active_tab != 'feedback' %}style="display: none;"{% endif %}>
+                <div class="feedback-section">
+                    
+                    {% if feedbacks and feedbacks|length > 0 %}
+                    <div class="feedback-container">
+                        {% for feedback in feedbacks %}
+                        <div class="feedback-card">
+                            <div class="feedback-header">
+                                <div class="feedback-meta">
+                                <span class="feedback-buyer">{{ feedback.buyer_username }}</span>
+                                <span class="feedback-date">{{ feedback.timestamp }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="feedback-rating">
+                                {% for i in range(5) %}
+                                {% if i < feedback.rating|int %}
+                                    <span class="star filled">★</span>
+                                {% else %}
+                                    <span class="star">☆</span>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="feedback-content">
+                                <p>{{ feedback.comment }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-comment-alt"></i>
+                        <h3>No feedback yet</h3>
+                        <p>This seller hasn't received any feedback yet</p>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -200,13 +241,116 @@
     }
 
     .product-card {
-    cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .product-card img{
+        cursor: pointer;
     }
 
     .product-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .feedback-section {
+        overflow: auto;
+        margin-top: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        color: #333;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .feedback-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .feedback-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #f0f0f0;
+    }
+
+    .feedback-header {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+
+    .feedback-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+    }
+
+    .feedback-buyer {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .feedback-date {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .feedback-rating {
+        margin: 8px 0 12px;
+    }
+
+    .star {
+        color: #ddd;
+        font-size: 1.2rem;
+    }
+
+    .star.filled {
+        color: #FFC107;
+    }
+
+    .feedback-content p {
+        margin: 0;
+        color: #444;
+        line-height: 1.5;
+        font-size: 0.95rem;
+    }
+
+    /* Empty State Styles */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #888;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        color: #e0e0e0;
+    }
+
+    .empty-state h3 {
+        margin: 10px 0;
+        font-size: 1.2rem;
+        color: #555;
+    }
+
+    .empty-state p {
+        margin: 0;
+        font-size: 0.95rem;
     }
 
     /* Modal Styles */
