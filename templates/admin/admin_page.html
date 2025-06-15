@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - SecondLife</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='admin_css/admin_page.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='admin_css/admin_header.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='footer.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='account.css') }}"
+    />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Include header -->
+      {% include 'admin/admin_header.html' %}
+
+      <div class="account-container">
+        {% include 'admin/admin_sidebar.html' %}
+
+        <!-- Content Area -->
+        <div class="content-area">
+
+          <!-- User Management -->
+          {% if active_page == 'user_management' %}
+            {% include 'admin/user_management.html' %}
+          {% elif active_page == 'admin_edit_user' %}
+            {% include 'admin/admin_edit_user.html' %}
+          {% elif active_page == 'admin_add_user' %}
+            {% include 'admin/admin_add_user.html' %}
+
+          <!-- Order Management -->
+          {% elif active_page == 'order_management' %}
+            {% include 'admin/order_management.html' %}
+
+          
+          {% elif active_page == 'admin_view_products' %}
+            {% include 'admin/admin_view_products.html' %}
+          {% elif active_page == 'admin_product_upload_approval' %}
+            {% include 'admin/admin_product_upload_approval.html' %}
+
+
+
+
+          {% elif active_page == 'manage_feedback' %}
+            {% include 'admin/manage_feedback.html' %}
+          {% elif active_page == 'admin_dashboard' %}
+            {% include 'admin/admin_dashboard.html' %}
+          {% elif active_page == 'admin_profile' %}
+            {% include 'admin/admin_profile.html' %}
+          {% endif%}
+
+
+
+
+
+
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class="flashes">
+            {% for message in messages %}
+            {% if message is string %}
+            <!-- Uncategorised message -->
+            <div class="flash-message">{{ message }}</div>
+            {% else %}
+            <!-- Categorised message -->
+            {% set category, text = message %}
+            <div class="flash-message {{ category }}">{{ text }}</div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endwith %}
+
+
+
+        </div>
+      </div>
+
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Toggle submenu when parent items with submenu are clicked
+        const menuItemsWithSubmenu = document.querySelectorAll(
+          ".sidebar-menu-item > a + .sidebar-submenu"
+        );
+
+        menuItemsWithSubmenu.forEach((submenu) => {
+          const parentLink = submenu.previousElementSibling;
+
+          parentLink.addEventListener("click", function (e) {
+            e.preventDefault();
+            submenu.style.display =
+              submenu.style.display === "block" ? "none" : "block";
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,389 @@
+<head>
+    <meta charset="UTF-8">
+    <title>User Management</title>
+    <style>
+        .section-header {
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .table_head{
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
+
+        .role-filter select {
+            padding: 5px 8px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .clear_button {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            text-decoration: none;
+            background: white;
+            color: #333;
+            transition: all 0.3s ease;  /* Smooth transition */
+            cursor: pointer;            /* Pointer on hover */
+        }
+
+        .clear_button:hover {
+            color : white ;
+            background: #27ae60;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  /* Subtle shadow */
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 16px;
+        }
+
+        thead {
+            background-color: #f9fafc;
+        }
+
+        th {
+            color: #444;
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+
+        td {
+            font-size: 14px;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f7fb;
+        }
+
+        .search-container {
+            text-align: right;
+            margin-bottom: 10px;
+
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        .search-container input {
+            padding: 6px 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        .total_user {
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        /* Hover enhancements for icon buttons */
+        .icon-button {
+            display: inline-block;
+            padding: 6px 10px;
+            font-size: 14px;
+            color: #555;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-left: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        /* .icon-button:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.05);
+        } */
+
+        /* Icon-specific color hover overrides */
+        .icon-add:hover {
+            color : white ;
+            background: #27ae60;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .icon-edit:hover {
+            color : white ;
+            background: #27ae60;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .icon-delete:hover {
+            color : white ;
+            background: #c82333;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Hover effects for modal buttons */
+        .confirm-btn, .cancel-btn {
+            transition: all 0.2s ease;
+        }
+
+        .confirm-btn:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+        }
+
+        .cancel-btn:hover {
+            background-color: #b3b3b3;
+            transform: scale(1.05);
+        }
+
+        .icon-button i {
+            pointer-events: none;
+        }
+
+        .icon-add {
+            color: #28a745; /* green */
+        }
+
+        .edit-delete-buttons {
+            display: flex;
+            gap: 1px; 
+            align-items: center;
+        }
+
+        .icon-edit {
+            color: #28a745; /* blue */
+        }
+
+        .icon-delete {
+            color: #dc3545; /* red */
+        }
+        .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.4);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        }
+
+        .modal-box {
+        background: white;
+        padding: 20px 25px;
+        border-radius: 10px;
+        width: 300px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        text-align: center;
+        }
+
+        .modal-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        }
+
+        .confirm-btn, .cancel-btn {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        cursor: pointer;
+        }
+
+        .confirm-btn {
+        background-color: #dc3545;
+        color: white;
+        }
+
+        .cancel-btn {
+        background-color: #ccc;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        /* Ensure the table fits content properly inside scroll */
+        .table-scroll table {
+            min-width: 800px; /* or adjust based on column count */
+        }
+
+        /* flash message css */
+        .flashes {
+            margin-bottom: 20px;
+        }
+
+        .flash-message {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        /* For error messages */
+        .flash-message.error {
+            background: #dc3545;
+        }
+
+        /* For warning messages */
+        .flash-message.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="section-header">
+        <h2>User Management</h2>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="flashes" style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div class="flash-message"
+            style="padding: 10px 15px; background: #4CAF50; color: white; border-radius: 4px; margin-bottom: 5px;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="table-container">
+        <form method="get" class="search-container" >
+            <div class="table_head">
+                <div class="role-filter">
+                    <label for="roleFilter">Filter: </label>
+                    <select name="role" id="roleFilter" onchange="this.form.submit()">
+                        <option value="">All</option>
+                        <option value="admin" {% if request.args.get('role')=='admin' %}selected{% endif %}>Admin</option>
+                        <option value="user" {% if request.args.get('role')=='user' %}selected{% endif %}>User</option>
+                    </select>
+                </div>
+                    <a href="{{ url_for('admin_add_user') }}" class="icon-button icon-add" title="Add User">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </a>      
+            </div>
+            <div class="search-input">
+                Search:
+                <input type="text" name="search" value="{{ request.args.get('search', '') }}" placeholder="Type to search..."
+                    onkeyup="if(event.key === 'Enter'){ this.form.submit(); }">
+                    <a href="{{ url_for('user_management') }}" class="clear_button">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Role</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if users %}
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.address }}</td>
+                            <td>{{ user.role }}</td>
+                            <td>
+                                <div class="edit-delete-buttons">
+                                    <a href="{{ url_for('admin_edit_user', username=user.username) }}" class="icon-button icon-edit" title="Edit">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <a href="#" class="icon-button icon-delete" title="Delete" onclick="openDeleteModal('{{ user.username | urlencode }}')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </div>
+                                        
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" style="text-align:center; color: #999;">User Not Found</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+                <tfoot>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="total_user">
+            Showing {{ filtered_user_count }} of {{ total_user_count }} entries  
+        </div>
+
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <p>Are you sure you want to delete <strong id="modalUsername"></strong>?</p>
+            <div class="modal-actions">
+                <button onclick="closeDeleteModal()" class="cancel-btn">Cancel</button>
+                <button onclick="confirmDelete()" class="confirm-btn">Yes, Delete</button>
+            </div>
+        </div>
+        </div>
+
+</body>
+
+</html>
+
+<script>
+    let selectedUsername = '';
+
+    function openDeleteModal(username) {
+        selectedUsername = username;
+        document.getElementById('modalUsername').innerText = username;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+        selectedUsername = '';
+    }
+
+    function confirmDelete() {
+        if (selectedUsername) {
+            const safeUsername = encodeURIComponent(selectedUsername);
+            window.location.href = `/admin/user_management/delete/${safeUsername}`;
+        }
+    }
+</script>
+  

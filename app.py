@@ -6,6 +6,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from collections import defaultdict #yy
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -16,7 +17,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 class User(UserMixin):
-    def __init__(self, username, phone, email, password, address, profile_image):
+    def __init__(self, username, phone, email, password, address, profile_image, role): #yy
         self.id = username
         self.username = username
         self.phone = phone
@@ -24,6 +25,7 @@ class User(UserMixin):
         self.password = password
         self.address = address
         self.profile_image = profile_image
+        self.role = role #yy
 
 def get_feedback_for_seller(seller_id):
     feedbacks = []
@@ -75,7 +77,7 @@ def load_user(username):
         for line in file:
             data = line.strip().split('||')
             if data[0] == username:
-                return User(data[0], data[1], data[2], data[3], data[4], data[5])
+                return User(data[0], data[1], data[2], data[3], data[4], data[5], data[6]) #yy
     return None
 
 @app.route('/')
@@ -139,7 +141,10 @@ def require_login():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main'))
+        if current_user.role == "admin": #yy
+            return redirect(url_for('admin_dashboard')) #yy
+        else: #yy
+            return redirect(url_for('main'))
         
     if request.method == 'POST':
         username = request.form['username']
@@ -149,9 +154,13 @@ def login():
             for line in file:
                 data = line.strip().split('||')
                 if (data[0] == username or data[2] == username) and check_password_hash(data[3], password):
-                    user = User(data[0], data[1], data[2], data[3], data[4], data[5])
+                    user = User(data[0], data[1], data[2], data[3], data[4], data[5], data[6]) #yy
                     login_user(user)
-                    return redirect(url_for('main'))
+                    
+                    if (data[6] == "user"):
+                        return redirect(url_for('main'))
+                    else :
+                        return redirect(url_for('admin_dashboard'))
         
         flash("Invalid username or password.")
     return render_template('login.html')
@@ -191,14 +200,56 @@ def register():
 
         address = "-"
         profile_image = "-"
+        role = "user"
         
         with open("databases/member_detail.txt", "a") as file:
-            file.write(f"{username}||{phone}||{email}||{hashed_password}||{address}||{profile_image}\n")
+            file.write(f"{username}||{phone}||{email}||{hashed_password}||{address}||{profile_image}||{role}\n")
         
         flash("Registration successful! Please login.")
         return redirect(url_for('login'))
     
     return render_template('register.html')
+
+# yy admin register start
+@app.route('/admin_register', methods=['GET', 'POST'])
+def admin_register():
+    if request.method == 'POST':
+        username = request.form['username']
+        phone = request.form['phone']
+        email = request.form['email']
+        password = request.form['password']
+        confirm = request.form['confirm']
+
+        if password != confirm:
+            flash("Passwords do not match!")
+            return render_template('register.html')
+
+        # Check if username or email already exists
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                data = line.strip().split('||')
+                if data[0] == username:
+                    flash("Username already exists!")
+                    return render_template('register.html')
+                if data[2] == email:
+                    flash("Email already registered!")
+                    return render_template('register.html')
+
+        # Hash the password before storing
+        hashed_password = generate_password_hash(password)
+
+        address = "-"
+        profile_image = "-"
+        role = "admin"
+        
+        with open("databases/member_detail.txt", "a") as file:
+            file.write(f"{username}||{phone}||{email}||{hashed_password}||{address}||{profile_image}||{role}\n")
+        
+        flash("Registration successful! Please login.")
+        return redirect(url_for('login'))
+    
+    return render_template('admin/admin_register.html')
+# yy admin register end
 
 @app.route('/products')
 @login_required
@@ -1385,65 +1436,6 @@ def account_settings():
                          active_page='settings', 
                          user_data=user_data)
 
-
-# WILLIAM Admin Order Management
-@app.route('/order-management')
-def order_management():
-    orders = []
-
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    min_price = request.args.get('min_price', type=float)
-    max_price = request.args.get('max_price', type=float)
-
-    try:
-        with open("databases/orders.txt", "r") as file:
-            for line in file:
-                parts = line.strip().split('||')
-                if len(parts) >= 8:
-                    order = {
-                        'order_id': parts[0],
-                        'buyer_username': parts[1],
-                        'product_id': parts[2],
-                        'order_date': parts[3],
-                        'payment_method': parts[4],
-                        'amount_paid': float(parts[5]),
-                        'status': parts[6],
-                        'delivered_date': parts[7] if parts[7] else None
-                    }
-
-                    # Apply filters
-                    include = True
-
-                    if start_date:
-                        try:
-                            order_dt = datetime.strptime(order['order_date'], "%Y-%m-%d")
-                            if order_dt < datetime.strptime(start_date, "%Y-%m-%d"):
-                                include = False
-                        except:
-                            pass
-
-                    if end_date:
-                        try:
-                            order_dt = datetime.strptime(order['order_date'], "%Y-%m-%d")
-                            if order_dt > datetime.strptime(end_date, "%Y-%m-%d"):
-                                include = False
-                        except:
-                            pass
-
-                    if min_price is not None and order['amount_paid'] < min_price:
-                        include = False
-
-                    if max_price is not None and order['amount_paid'] > max_price:
-                        include = False
-
-                    if include:
-                        orders.append(order)
-    except FileNotFoundError:
-        pass
-
-    return render_template('admin_orders.html', orders=orders)
-
 #William function feedback 
 @app.route('/complete_order/<order_id>', methods=['POST'])
 @login_required
@@ -1647,6 +1639,919 @@ def get_seller_feedback():
         'feedbacks': feedbacks,
         'count': len(feedbacks)
     })
+
+
+#yy admin user management start
+@app.route('/admin/user_management')
+@login_required
+def user_management():
+    active_tab = request.args.get('tab', 'listing')
+    role_filter = request.args.get('role', '').lower()
+    search_query = request.args.get('search', '').lower()
+    user_profile_image = current_user.profile_image if current_user.profile_image != '-' else None
+
+    users = []
+    filtered_users = []
+
+    try:
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split("||")
+                if len(parts) >= 7:
+                    user = {
+                        'username': parts[0],
+                        'phone': parts[1],
+                        'email': parts[2],
+                        'address': parts[4],
+                        'role': parts[6]
+                    }
+
+                    users.append(user)
+    except FileNotFoundError:
+        pass
+
+    # Total users (before filtering)
+    total_user_count = len(users)
+
+    # Filter
+    for user in users:
+        matches_role = (role_filter == '' or user['role'] == role_filter)
+        matches_search = (search_query in user['username'].lower() or
+                          search_query in user['phone'] or
+                          search_query in user['email'].lower() or
+                          search_query in user['address'].lower() or
+                          search_query in user['role'].lower())
+
+        if matches_role and matches_search:
+            filtered_users.append(user)
+
+    filtered_user_count = len(filtered_users)
+
+    return render_template('admin/admin_page.html',
+                           active_page='user_management',
+                           active_tab=active_tab,
+                           user_profile_image=user_profile_image,
+                           users=filtered_users,
+                           filtered_user_count=filtered_user_count,
+                           total_user_count=total_user_count)
+#yy admin user management end
+
+#yy admin user management edit user start
+@app.route('/admin/user_management/edit/<username>', methods=['GET', 'POST'])
+@login_required
+def admin_edit_user(username):
+    user = None
+
+    # Read user data from the text file
+    try:
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                data = line.strip().split("||")
+                if len(data) >= 6 and data[0] == username:
+                    user = type("User", (object,), {})()  # create simple user-like object
+                    user.id = data[0]
+                    user.username = data[0]
+                    user.phone = data[1]
+                    user.email = data[2]
+                    user.address = data[4]
+                    user.profile_image = data[5]
+                    user.role = data[6]
+                    break
+    except Exception as e:
+        flash("Error loading user data.")
+
+    if not user:
+        flash("User not found.")
+        return redirect(url_for('admin_user_list'))  # or another admin page
+
+    if request.method == 'POST':
+        phone = request.form.get('phone')
+        address = request.form.get('address')
+        role = request.form.get('role')
+
+        # Convert empty strings to '-' before saving
+        phone = phone.strip() if phone and phone.strip() else '-'
+        address = address.strip() if address and address.strip() else '-'
+
+        # Profile image processing
+        profile_image_filename = user.profile_image
+        profile_image = request.files.get('profile_image')
+
+        if profile_image and profile_image.filename:
+            allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+            file_extension = profile_image.filename.rsplit('.', 1)[1].lower()
+
+            if file_extension not in allowed_extensions:
+                flash("Invalid file type! Please upload PNG, JPG, JPEG, or GIF files only.")
+                return render_template('admin/admin_edit_user.html', user_data=user)
+
+            upload_dir = os.path.join('static/uploads/profile_images')
+            os.makedirs(upload_dir, exist_ok=True)
+
+            profile_image_filename = f"{user.id}_{int(time.time())}_profile.{file_extension}"
+
+            try:
+                profile_image.save(os.path.join(upload_dir, profile_image_filename))
+
+                if user.profile_image and user.profile_image != '-' and user.profile_image != profile_image_filename:
+                    old_image_path = os.path.join(upload_dir, user.profile_image)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+            except Exception as e:
+                flash("Error uploading profile image. Please try again.")
+                return render_template('admin/admin_edit_user.html', user_data=user)
+
+        if request.form.get('remove_image') == 'true':
+            if user.profile_image and user.profile_image != '-':
+                upload_dir = os.path.join('static/uploads/profile_images')
+                old_image_path = os.path.join(upload_dir, user.profile_image)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+            profile_image_filename = '-'
+
+        updated_lines = []
+        user_found = False
+
+        try:
+            with open("databases/member_detail.txt", "r") as file:
+                for line in file:
+                    data = line.strip().split('||')
+                    if len(data) >= 6 and data[0] == user.id:
+                        updated_line = f"{user.username}||{phone}||{user.email}||{data[3]}||{address}||{profile_image_filename}||{role}\n"
+                        updated_lines.append(updated_line)
+                        user_found = True
+                    else:
+                        updated_lines.append(line)
+
+            if user_found:
+                with open("databases/member_detail.txt", "w") as file:
+                    file.writelines(updated_lines)
+
+                user.phone = phone
+                user.address = address
+                user.profile_image = profile_image_filename
+                user.role = role
+
+                flash("Profile updated successfully!")
+            else:
+                flash("Error updating user. User not found.")
+
+        except Exception as e:
+            flash("Error updating user profile. Please try again.")
+
+        return redirect(url_for('user_management', username=user.username))
+
+    # GET method: render user data
+    user_data = {
+        'username': user.username,
+        'email': user.email,
+        'phone': user.phone if user.phone != '-' else '',
+        'address': user.address if user.address != '-' else '',
+        'profile_image': user.profile_image if user.profile_image != '-' else None,
+        'role': user.role if user.role != '-' else 'user'
+    }
+    
+    return render_template('admin/admin_page.html', 
+                           active_page='admin_edit_user',
+                           user_data=user_data)
+#yy admin user management edit user end
+
+#yy admin user management delete user start
+@app.route('/admin/user_management/delete/<username>', methods=['GET'])
+@login_required
+def admin_delete_user(username):
+    lines = []
+    user_deleted = False
+    try:
+        with open("databases/member_detail.txt", "r") as file:
+            lines = file.readlines()
+
+        new_lines = []
+        for line in lines:
+            data = line.strip().split("||")
+            if len(data) >= 6 and data[0] != username:
+                new_lines.append(line)
+            else:
+                user_deleted = True
+                # Delete profile image if exists
+                if data[5] and data[5] != "-":
+                    image_path = os.path.join('static/uploads/profile_images', data[5])
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+
+        with open("databases/member_detail.txt", "w") as file:
+            file.writelines(new_lines)
+
+    except Exception as e:
+        flash("Error deleting user.")
+
+    if user_deleted:
+        flash(f"User '{username}' has been deleted.")
+    else:
+        flash("User not found or could not be deleted.")
+
+    return redirect(url_for('user_management'))
+#yy admin user management delete user end
+
+#yy admin user management add user start
+@app.route('/admin/user_management/add', methods=['GET', 'POST'])
+@login_required
+def admin_add_user():
+    username_exists = False
+    password_mismatch = False
+    success = False
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        phone = request.form.get('phone', '').strip() or '-'
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm = request.form.get('confirm', '')
+        address = request.form.get('address', '').strip() or '-'
+        role = request.form.get('role', 'user').strip()
+
+        # Check for existing username
+        if username:
+            try:
+                with open("databases/member_detail.txt", "r") as f:
+                    for line in f:
+                        parts = line.strip().split("||")
+                        if len(parts) > 0 and parts[0] == username:
+                            username_exists = True
+                            flash("Username already exists!")
+                            return redirect(url_for('admin_add_user'))
+            except FileNotFoundError:
+                pass  # If file doesn't exist, continue as if no users exist
+
+        # Check for password mismatch
+        if password != confirm:
+            password_mismatch = True
+            flash("Password doesn't match!")
+            return redirect(url_for('admin_add_user'))
+
+        # Proceed only if no errors
+        if not username_exists and not password_mismatch:
+            hashed_password = generate_password_hash(password)
+            with open("databases/member_detail.txt", "a") as f:
+                f.write(f"{username}||{phone}||{email}||{hashed_password}||{address}||-||{role}\n")
+            success = True
+
+        return redirect(url_for('user_management'))
+
+    return render_template(
+        'admin/admin_page.html',
+        active_page='admin_add_user'
+    )
+#yy admin user management add user end
+
+
+
+# yy admin order management start
+@app.route('/admin/order_management')
+@login_required
+def order_management():
+    status_filter = request.args.get('status', '').lower()
+    search_query = request.args.get('search', '').lower()
+    start_date_str = request.args.get('start_date', '')
+    end_date_str = request.args.get('end_date', '')
+
+    # Convert string to date object
+    start_date = None
+    end_date = None
+    try:
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+    except ValueError:
+        pass  # Ignore invalid date input
+
+    # Load product titles into a dictionary
+    product_titles = {}
+    try:
+        with open("databases/products.txt", "r") as pfile:
+            for line in pfile:
+                parts = line.strip().split("||")
+                if len(parts) >= 5:
+                    product_id = parts[0].strip()
+                    title = parts[4].strip()
+                    product_titles[product_id] = title
+    except FileNotFoundError:
+        pass
+
+    orders = []
+    filtered_orders = []
+
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split("||")
+                if len(parts) >= 9:
+                    order_time_str = parts[3].strip()
+                    try:
+                        order_time = datetime.strptime(order_time_str, "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        order_time = None
+
+                    product_id = parts[2].strip()
+                    product_title = product_titles.get(product_id, f"Unknown ({product_id})")
+
+                    order = {
+                        'order_id': parts[0],
+                        'buyer_username': parts[1],
+                        'product_id': parts[2],
+                        'product_title': product_title,
+                        'order_time': order_time_str,
+                        'order_time_obj': order_time,  # keep parsed date for comparison
+                        'payment_method': parts[4],
+                        'payment_amount': parts[5],
+                        'delivery_address': parts[6],
+                        'status': parts[7].strip().lower(),
+                        'delivered_date': parts[8]
+                    }
+                    orders.append(order)
+    except FileNotFoundError:
+        pass
+
+    # Apply search and status filter
+    for order in orders:
+        matches_search = (
+            search_query in order['buyer_username'].lower() or
+            search_query in order['product_id'].lower() or
+            search_query in order['product_title'].lower() or
+            search_query in order['order_time'].lower() or
+            search_query in order['payment_method'].lower() or
+            search_query in order['payment_amount'].lower() or
+            search_query in order['delivery_address'].lower() or
+            search_query in order['status'].lower() or
+            search_query in order['delivered_date'].lower()
+        )
+
+        matches_status = (status_filter == '' or order['status'].lower() == status_filter)
+
+        matches_date = True
+        if order['order_time_obj']:
+            if start_date and order['order_time_obj'] < start_date:
+                matches_date = False
+            if end_date and order['order_time_obj'] > end_date:
+                matches_date = False
+
+        if matches_search and matches_status and matches_date:
+            filtered_orders.append(order)
+
+    return render_template('admin/admin_page.html',
+                            active_page='order_management',
+                            orders=filtered_orders,
+                            total_order_count=len(orders),
+                            filtered_order_count=len(filtered_orders)
+                            )
+# yy admin order management end
+
+# yy admin view product start
+@app.route('/admin/admin_view_products')
+@login_required
+def admin_view_products():
+    category_filter = request.args.get('category', '')
+    status_filter = request.args.get('status', '')
+    search_query = request.args.get('search', '').lower()
+
+    products = []
+    with open('databases/products.txt', 'r', encoding='utf-8') as f:
+        for line in f:
+            parts = [p.strip() for p in line.strip().split('||')]
+            if len(parts) < 13:
+                continue  # Skip malformed lines
+
+            product = {
+                'product_id': parts[0],
+                'seller_username': parts[1],
+                'category': parts[2],
+                'status': parts[3],
+                'title': parts[4],
+                'brand': parts[5],
+                'model': parts[6],
+                'year': parts[7],
+                'description': parts[8],
+                'price': parts[9],
+                'shipping_cost': parts[10],
+                'main_photo_filename': parts[11],
+                'additional_photo_filenames': parts[12]
+            }
+            
+
+            # Apply filters
+            if category_filter and product['category'] != category_filter:
+                continue
+            if status_filter and product['status'] != status_filter:
+                continue
+
+            # Apply search (case insensitive across selected fields)
+            if search_query and not (
+                search_query in product['title'].lower() or
+                search_query in product['brand'].lower() or
+                search_query in product['model'].lower() or
+                search_query in product['seller_username'].lower()
+            ):
+                continue
+
+            products.append(product)
+
+    total_count = sum(1 for _ in open('databases/products.txt', 'r', encoding='utf-8'))
+    filtered_count = len(products)
+
+    return render_template('admin/admin_page.html',
+                           active_page='admin_view_products',
+                           products=products,
+                           total_product_count=total_count,
+                           filtered_product_count=filtered_count)
+
+# yy admin view product end
+
+# yy admin view product modal window start
+@app.route('/product/details/<product_id>')
+@login_required
+def product_details_partial(product_id):
+    product = None
+    with open("databases/products.txt", "r") as file:
+        for line in file:
+            parts = line.strip().split('||')
+            if parts[0] == product_id:
+                product = {
+                    'id': parts[0],
+                    'title': parts[4],
+                    'brand': parts[5],
+                    'model': parts[6],
+                    'year': parts[7],
+                    'description': parts[8].strip('"'),
+                    'price': float(parts[9]) if parts[9].replace('.', '', 1).isdigit() else 0,
+                    'shipping_cost': float(parts[10]) if parts[10].replace('.', '', 1).isdigit() else 0,
+                    'main_photo': parts[11],
+                    'category': parts[2],
+                    'status': parts[3],
+                    'seller': parts[1]
+                }
+                break
+    if not product:
+        return "<p>Product not found</p>"
+
+    return render_template("partials/product_modal_content.html", product=product)
+# yy admin view product modal window end
+
+
+# yy admin_product_upload_approval start
+@app.route('/admin/admin_product_upload_approval')
+@login_required
+def admin_product_upload_approval():
+    active_tab = request.args.get('tab', 'pending')
+
+    # Initialize lists for different statuses
+    pending_products = []
+    approved_products = []
+    rejected_products = []
+    sold_products = []
+
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 12:
+                    status = parts[3].lower()
+                    product = {
+                        'id': parts[0],
+                        'seller': parts[1],
+                        'category': parts[2],
+                        'status': status,
+                        'title': parts[4],
+                        'brand': parts[5],
+                        'model': parts[6],
+                        'year': parts[7],
+                        'description': parts[8].strip('"'),
+                        'price': parts[9],
+                        'shipping_cost': parts[10],
+                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg",
+                        'additional_photos': parts[12].split(',') if len(parts) > 12 and parts[12] else []
+                    }
+
+                    if status == 'pending':
+                        pending_products.append(product)
+                    elif status == 'approved':
+                        approved_products.append(product)
+                    elif status == 'rejected':
+                        rejected_products.append(product)
+                    elif status == 'sold':
+                        sold_products.append(product)
+
+    except FileNotFoundError:
+        pass
+
+    # Count for each category
+    pending_products_count = len(pending_products)
+    approved_products_count = len(approved_products)
+    rejected_products_count = len(rejected_products)
+    sold_products_count = len(sold_products)
+
+    return render_template('admin/admin_page.html',
+                           active_page='admin_product_upload_approval',
+                           active_tab=active_tab,
+                           pending_products=pending_products,
+                           pending_products_count=pending_products_count,
+                           approved_products=approved_products,
+                           approved_products_count=approved_products_count,
+                           rejected_products=rejected_products,
+                           rejected_products_count=rejected_products_count,
+                           sold_products=sold_products,
+                           sold_products_count=sold_products_count)
+# yy admin_product_upload_approval end
+
+# yy update_product_status start
+@app.route('/admin/update_product_status', methods=['POST'])
+@login_required
+def update_product_status():
+    product_id = request.form.get('product_id')
+    new_status = request.form.get('status')
+
+    updated_lines = []
+    product_updated = False
+
+    try:
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 12 and parts[0] == product_id:
+                    parts[3] = new_status  # update status
+                    product_updated = True
+                    updated_lines.append('||'.join(parts) + '\n')
+                else:
+                    updated_lines.append(line)
+
+        if product_updated:
+            with open("databases/products.txt", "w") as file:
+                file.writelines(updated_lines)
+            return jsonify({'success': True, 'message': 'Status updated'})
+        else:
+            return jsonify({'success': False, 'message': 'Product not found'}), 404
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+# yy update_product_status end
+
+
+# yy admin manage feedback start
+@app.route('/admin/manage_feedback')
+@login_required
+def manage_feedback():
+    print('manage_feedback')
+
+    return render_template('admin/admin_page.html',
+                            active_page='manage_feedback')
+# yy admin manage feedback end
+
+# yy admin dashboard start
+@app.route('/admin/admin_dashboard')
+@login_required
+def admin_dashboard():
+
+    # Initialize order count containers
+    order_counts = {
+        "monthly": [0] * 12,
+        "weekly": [0] * 53,
+        "yearly": {}
+    }
+
+    status_counts = {
+        "pending": 0,
+        "approved": 0,
+        "rejected": 0,
+        "sold": 0
+    }
+
+    metrics = {
+        "profit": 0,          # count sold products
+        "customer": 0,        # count users with role 'user'
+        "orders": 0,          # count all orders
+        "request": 0          # count pending products
+    }
+
+    orders_file = 'databases/orders.txt'
+    products_file = 'databases/products.txt'
+    members_file = 'databases/member_detail.txt'
+    order_details = []
+    category_counts = {}
+    products_dict = {}
+    user_details = []
+
+    if os.path.exists(members_file):
+        with open(members_file, 'r') as f:
+            for line in f:
+                parts = line.strip().split("||")
+                if len(parts) < 7:
+                    continue  # Skip invalid lines
+                username = parts[0]
+                phone = parts[1]
+                email = parts[2]
+                role = parts[6]
+                user_details.append({
+                    "username": username,
+                    "phone": phone,
+                    "email": email,
+                    "role": role
+                })
+                if role == 'user':
+                    metrics["customer"] += 1
+
+    if os.path.exists(products_file):
+        with open(products_file, 'r') as f:
+            for line in f:
+                parts = line.strip().split("||")
+                if len(parts) < 5:  # Need at least product_id, seller, category, status, title
+                    continue
+                
+                product_id = parts[0].strip()
+                category = parts[2].strip().lower()
+                status = parts[3].strip().lower()
+                title = parts[4].strip()
+                
+                # Store product info in dictionary
+                products_dict[product_id] = {
+                    'title': title,
+                    'category': category,
+                    'status': status
+                }
+                
+                # Only count approved or sold products for pie chart
+                if status in ['approved', 'sold']:
+                    category_counts[category] = category_counts.get(category, 0) + 1
+
+                # Count all statuses for doughnut chart
+                if status in status_counts:
+                    status_counts[status] += 1
+
+                # Count all statuses to top card
+                if status == 'pending':
+                    metrics["request"] += 1
+
+    if os.path.exists(orders_file):
+        with open(orders_file, 'r') as f:
+            # metrics["orders"] = sum(1 for line in f if line.strip())
+            for line in f:
+                parts = line.strip().split("||")
+                if len(parts) < 8:
+                    continue  # Skip invalid lines
+                metrics["orders"] += 1  # Count all orders
+                
+                # Check if order is completed, sum the payment amount
+                status = parts[7].lower().strip()
+                if "complete" in status:
+                    try:
+                        payment_amount = float(parts[5].strip())
+                        metrics["profit"] += payment_amount
+                    except (ValueError, IndexError):
+                        continue
+                try:
+                    buyer = parts[1]
+                    product_id  = parts[2]
+                    payment_method = parts[4]
+                    order_time_str = parts[3]
+                    status = parts[7].lower() if len(parts) > 7 else "pending"  # Standardize to lowercase
+                    if "complete" in status:
+                        status = "completed"
+                    elif "ship" in status:
+                        status = "shipping"
+                    
+                    # Get product title from products dictionary
+                    product_title = products_dict.get(product_id, {}).get('title', 'Unknown Product')
+
+                except IndexError:
+                    continue  # Skip lines that don't have enough fields
+                try:
+                    order_time = datetime.strptime(parts[3], "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    continue
+
+                # Monthly
+                order_counts["monthly"][order_time.month - 1] += 1
+
+                # Weekly
+                week_num = order_time.isocalendar()[1]
+                if 1 <= week_num <= 53:
+                    order_counts["weekly"][week_num - 1] += 1
+
+                # Yearly
+                year = order_time.year
+                order_counts["yearly"][year] = order_counts["yearly"].get(year, 0) + 1
+
+                # Append full order details
+                order_details.append({
+                    "buyer": buyer,
+                    "product_id ": product_id,
+                    "product_title": product_title,
+                    "payment_method": payment_method,
+                    "status": status
+                })
+
+    # Prepare category data for pie chart
+    category_labels = []
+    category_data = []
+    colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6']
+    
+    # Status data for doughnut chart
+    status_labels = ['Pending', 'Approved', 'Rejected', 'Sold']
+    status_data = [
+        status_counts['pending'],
+        status_counts['approved'],
+        status_counts['rejected'],
+        status_counts['sold']
+    ]
+    status_colors = ['#f59e0b', '#10b981', '#ef4444', '#3b82f6']
+    
+    for i, (category, count) in enumerate(sorted(category_counts.items())):
+        category_labels.append(category.capitalize())
+        category_data.append(count)
+        # If we have more categories than colors, cycle through colors
+        if i >= len(colors):
+            colors.append(colors[i % len(colors)])
+
+    # Prepare data for chart
+    month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    order_chart_data = {
+        "monthly": [{"label": m, "collections": c} for m, c in zip(month_labels, order_counts["monthly"])],
+        "weekly": [{"label": f"Week {i+1}", "collections": c} for i, c in enumerate(order_counts["weekly"])],
+        "yearly": [{"label": str(y), "collections": c} for y, c in sorted(order_counts["yearly"].items())]
+    }
+
+    product_chart_data = {
+        "categories": {
+            "labels": category_labels,
+            "data": category_data,
+            "colors": colors
+        },
+        "status": {
+            "labels": status_labels,
+            "data": status_data,
+            "colors": status_colors
+        }
+
+    }
+
+    feedback_data = []
+    
+    try:
+        # Read feedback data from text file
+        with open('databases/feedback.txt', 'r') as file:
+            # Skip header line if exists
+            lines = file.readlines()
+            
+            for line in lines:
+                # Split by || and strip whitespace
+                parts = [part.strip() for part in line.split('||')]
+                
+                if len(parts) >= 8:  # Ensure we have all fields
+                    feedback_data.append({
+                        'feedback_id': parts[0],
+                        'order_id': parts[1],
+                        'product_id': parts[2],
+                        'seller_username': parts[3],
+                        'buyer_username': parts[4],
+                        'rating': parts[5],
+                        'feedback_text': parts[6],
+                        'timestamp': parts[7]
+                    })
+    
+    except FileNotFoundError:
+        flash('Feedback data file not found', 'error')
+    except Exception as e:
+        flash(f'Error reading feedback data: {str(e)}', 'error')
+
+    return render_template('admin/admin_page.html',
+                           active_page='admin_dashboard',
+                           order_chart_data=order_chart_data,
+                           order_details=order_details,
+                           product_chart_data=product_chart_data,
+                           user_details=user_details,
+                           metrics=metrics,
+                           feedback_data=feedback_data)
+# yy admin dashboard end
+
+#yy admin profile start
+@app.route('/admin/admin_profile/<username>', methods=['GET', 'POST'])
+@login_required
+def admin_profile(username):
+    user = None
+
+    # Read user data from the text file
+    try:
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                data = line.strip().split("||")
+                if len(data) >= 6 and data[0] == username:
+                    user = type("User", (object,), {})()  # create simple user-like object
+                    user.id = data[0]
+                    user.username = data[0]
+                    user.phone = data[1]
+                    user.email = data[2]
+                    user.address = data[4]
+                    user.profile_image = data[5]
+                    user.role = data[6]
+                    break
+    except Exception as e:
+        flash("Error loading user data.")
+
+    if not user:
+        flash("User not found.")
+        return redirect(url_for('admin_user_list'))  # or another admin page
+
+    if request.method == 'POST':
+        phone = request.form.get('phone')
+        address = request.form.get('address')
+        role = request.form.get('role')
+
+        # Convert empty strings to '-' before saving
+        phone = phone.strip() if phone and phone.strip() else '-'
+        address = address.strip() if address and address.strip() else '-'
+
+        # Profile image processing
+        profile_image_filename = user.profile_image
+        profile_image = request.files.get('profile_image')
+
+        if profile_image and profile_image.filename:
+            allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+            file_extension = profile_image.filename.rsplit('.', 1)[1].lower()
+
+            if file_extension not in allowed_extensions:
+                flash("Invalid file type! Please upload PNG, JPG, JPEG, or GIF files only.")
+                return render_template('admin/admin_profile.html', user_data=user)
+
+            upload_dir = os.path.join('static/uploads/profile_images')
+            os.makedirs(upload_dir, exist_ok=True)
+
+            profile_image_filename = f"{user.id}_{int(time.time())}_profile.{file_extension}"
+
+            try:
+                profile_image.save(os.path.join(upload_dir, profile_image_filename))
+
+                if user.profile_image and user.profile_image != '-' and user.profile_image != profile_image_filename:
+                    old_image_path = os.path.join(upload_dir, user.profile_image)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+            except Exception as e:
+                flash("Error uploading profile image. Please try again.")
+                return render_template('admin/admin_profile.html', user_data=user)
+
+        if request.form.get('remove_image') == 'true':
+            if user.profile_image and user.profile_image != '-':
+                upload_dir = os.path.join('static/uploads/profile_images')
+                old_image_path = os.path.join(upload_dir, user.profile_image)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+            profile_image_filename = '-'
+
+        updated_lines = []
+        user_found = False
+
+        try:
+            with open("databases/member_detail.txt", "r") as file:
+                for line in file:
+                    data = line.strip().split('||')
+                    if len(data) >= 6 and data[0] == user.id:
+                        updated_line = f"{user.username}||{phone}||{user.email}||{data[3]}||{address}||{profile_image_filename}||{role}\n"
+                        updated_lines.append(updated_line)
+                        user_found = True
+                    else:
+                        updated_lines.append(line)
+
+            if user_found:
+                with open("databases/member_detail.txt", "w") as file:
+                    file.writelines(updated_lines)
+
+                user.phone = phone
+                user.address = address
+                user.profile_image = profile_image_filename
+                user.role = role
+
+                flash("User profile updated successfully!")
+            else:
+                flash("Error updating user. User not found.")
+
+        except Exception as e:
+            flash("Error updating user profile. Please try again.")
+
+        return redirect(url_for('admin_profile', username=user.username))
+
+    # GET method: render user data
+    user_data = {
+        'username': user.username,
+        'email': user.email,
+        'phone': user.phone if user.phone != '-' else '',
+        'address': user.address if user.address != '-' else '',
+        'profile_image': user.profile_image if user.profile_image != '-' else None,
+        'role': user.role if user.role != '-' else 'user'
+    }
+    
+    return render_template('admin/admin_page.html', 
+                           active_page='admin_profile',
+                           user_data=user_data)
+#yy admin profile end
     
 if __name__ == '__main__':
     app.run(debug=True)

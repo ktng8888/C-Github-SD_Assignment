@@ -1,0 +1,474 @@
+<div class="section-header">
+    <h2>Product Upload Request
+        ( {{pending_products_count}} )
+    </h2>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flask-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="tabs-container">
+    <div class="tabs">
+        <div class="tab {% if active_tab == 'pending' or active_tab is not defined %}active{% endif %}" data-tab="pending">
+            Pending ({{ pending_products_count|default('0') }})
+        </div>
+        <div class="tab {% if active_tab == 'approved' %}active{% endif %}" data-tab="approved">
+            Approved ({{ approved_products_count|default('0') }})
+        </div>
+        <div class="tab {% if active_tab == 'rejected' %}active{% endif %}" data-tab="rejected">
+            Rejected ({{ rejected_products_count|default('0') }})
+        </div>
+        <div class="tab {% if active_tab == 'sold' %}active{% endif %}" data-tab="sold">
+            Sold ({{ sold_products_count|default('0') }})
+        </div>
+        
+    </div>
+    <div class="tab-content">
+        <!-- Pending Products Tab -->
+        <div class="tab-pane {% if active_tab == 'pending' or active_tab is not defined %}active{% endif %}" id="pending-tab" {%
+            if active_tab !='pending' %}style="display: none;" {% endif %}>
+            {% if pending_products %}
+            <div class="product-grid">
+                {% for product in pending_products %}
+                <div class="product-card" onclick="openProductModal('{{ product.id }}', '{{ product.status|lower }}')">
+                    <div class="product-image">
+                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+                        <div class="shipping-badge">⏳ Pending</div>
+                    </div>
+                    <div class="product-details">
+                        <div class="product-title">{{ product.title }}</div>
+                        <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
+                        <div class="seller-info"><i class="fas fa-user"></i> Seller: {{ product.seller }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-hourglass-half"></i>
+                <h3>No pending products</h3>
+                <p>Pending uploads will appear here</p>
+            </div>
+            {% endif %}
+        </div>
+        
+
+        <!-- Approved Products Tab -->
+        <div class="tab-pane {% if active_tab == 'approved' %}active{% endif %}" id="approved-tab" {% if active_tab !='approved'
+            %}style="display: none;" {% endif %}>
+            {% if approved_products %}
+            <div class="product-grid">
+                {% for product in approved_products %}
+                <div class="product-card" onclick="openProductModal('{{ product.id }}', '{{ product.status|lower }}')">
+                    <div class="product-image">
+                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+                        <div class="completed-badge">✔️ Approved</div>
+                    </div>
+                    <div class="product-details">
+                        <div class="product-title">{{ product.title }}</div>
+                        <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
+                        <div class="seller-info"><i class="fas fa-user"></i> Seller: {{ product.seller }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-check-circle"></i>
+                <h3>No approved products</h3>
+                <p>Approved products will appear here</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Rejected Products Tab -->
+        <div class="tab-pane {% if active_tab == 'rejected' %}active{% endif %}" id="rejected-tab" {% if active_tab !='rejected'
+            %}style="display: none;" {% endif %}>
+            {% if rejected_products %}
+            <div class="product-grid">
+                {% for product in rejected_products %}
+                <div class="product-card" onclick="openProductModal('{{ product.id }}', '{{ product.status|lower }}')">
+                    <div class="product-image">
+                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+                        <div class="shipping-badge" style="background-color: #fee2e2; color: #dc2626; border-color: #fecaca;">❌
+                            Rejected</div>
+                    </div>
+                    <div class="product-details">
+                        <div class="product-title">{{ product.title }}</div>
+                        <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
+                        <div class="seller-info"><i class="fas fa-user"></i> Seller: {{ product.seller }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-times-circle"></i>
+                <h3>No rejected products</h3>
+                <p>Rejected uploads will appear here</p>
+            </div>
+            {% endif %}
+        </div>
+        
+
+        <!-- Sold Products Tab -->
+        <div class="tab-pane {% if active_tab == 'sold' %}active{% endif %}" id="sold-tab" {% if active_tab != 'sold' %}style="display: none;"{% endif %}>
+            {% if sold_products %}
+            <div class="product-grid">
+                {% for product in sold_products %}
+                <div class="product-card" onclick="openProductModal('{{ product.id }}', '{{ product.status|lower }}')">
+                    <div class="product-image">
+                        <img src="{{ product.main_photo }}" alt="{{ product.title }}" />
+                        <div class="completed-badge" style="background-color: #fef9c3; color: #ca8a04; border-color: #fde68a;">💰 Sold</div>
+                    </div>
+                    <div class="product-details">
+                        <div class="product-title">{{ product.title }}</div>
+                        <div class="product-price">RM {{ "%.2f"|format(product.price|float) }}</div>
+                        <div class="seller-info"><i class="fas fa-user"></i> Seller: {{ product.seller }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-money-bill-wave"></i>
+                <h3>No sold products</h3>
+                <p>Sold listings will appear here</p>
+            </div>
+            {% endif %}
+        </div>
+        
+    </div>
+</div>
+
+<!-- Modal Popup -->
+<div id="productModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Product Details</h2>
+            <span class="close" onclick="closeProductModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <iframe id="productDetailsFrame" src="" frameborder="0"></iframe>
+        </div>
+
+        <div class="modal-footer" id="modalFooter" style="display: none;">
+            <button class="approve-button" onclick="approveProduct()">Approve</button>
+            <button class="reject-button" onclick="rejectProduct()">Reject</button>
+        </div>
+    </div>
+
+    
+</div>
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".tabs .tab");
+        const tabPanes = document.querySelectorAll(".tab-pane");
+
+        tabs.forEach(tab => {
+            tab.addEventListener("click", function () {
+                tabs.forEach(t => t.classList.remove("active"));
+                this.classList.add("active");
+                tabPanes.forEach(pane => pane.style.display = "none");
+
+                const tabType = this.getAttribute("data-tab");
+                const targetPane = document.getElementById(`${tabType}-tab`);
+                if (targetPane) {
+                    targetPane.style.display = "block";
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .section-header {
+        margin-bottom: 20px;
+    }
+
+    .shipping-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #ede9fe;
+        color: #7c3aed;
+        padding: 6px 12px;
+        border: 1px solid #d8b4fe;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .completed-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #d1fae5;
+        color: #059669;
+        padding: 6px 12px;
+        border: 1px solid #a7f3d0;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .product-card {
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .product-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 2% auto;
+        padding: 0;
+        border: none;
+        border-radius: 12px;
+        width: 95%;
+        max-width: 1200px;
+        height: 90vh;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 25px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        border-radius: 12px 12px 0 0;
+        flex-shrink: 0;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        color: #333;
+        font-size: 1.5rem;
+    }
+
+    .close {
+        color: #999;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: #333;
+        background-color: #e9ecef;
+    }
+
+    .modal-body {
+        flex: 1;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    #productDetailsFrame {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 0 0 12px 12px;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .modal-content {
+            width: 98%;
+            height: 95vh;
+            margin: 2.5% auto;
+        }
+    }
+
+    .modal-footer {
+        padding: 15px 25px;
+        border-top: 1px solid #e9ecef;
+        text-align: right;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .approve-button,
+    .reject-button {
+        padding: 8px 16px;
+        margin-left: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .approve-button {
+        /* background-color: white;
+        border: 2px solid black; */
+        color: #27ae60;
+    }
+
+    .reject-button {
+        /* background-color: white; */
+        /* border: 2px solid black; */
+        color: #dc3545;
+    }
+
+    .approve-button:hover {
+        background-color: #27ae60;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+    .reject-button:hover {
+        background-color: #ef4444;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+</style>
+
+<script>
+    let currentProductId = null;
+
+    function openProductModal(productId, status) {
+        currentProductId = productId;
+
+        // Set the iframe source to load the product details page
+        const iframe = document.getElementById('productDetailsFrame');
+        iframe.src = `/product/details/${productId}`;
+
+        // Update modal title
+        document.getElementById('modalTitle').textContent = 'Product Details';
+
+        // Show Approve/Reject buttons only if product is pending
+        const footer = document.getElementById('modalFooter');
+        if (status === 'pending') {
+            footer.style.display = 'block';
+        } else {
+            footer.style.display = 'none';
+        }
+
+        // Show modal
+        document.getElementById('productModal').style.display = 'block';
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeProductModal() {
+        document.getElementById('productModal').style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scrolling
+
+        // Clear iframe source to stop loading
+        document.getElementById('productDetailsFrame').src = '';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function (event) {
+        const modal = document.getElementById('productModal');
+        if (event.target === modal) {
+            closeProductModal();
+        }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeProductModal();
+        }
+    });
+
+    function updateProductStatus(status) {
+        if (!currentProductId) return;
+
+        fetch('/admin/update_product_status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'  // optional, for some CSRF protections
+            },
+            body: `product_id=${encodeURIComponent(currentProductId)}&status=${encodeURIComponent(status)}`
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();  // reload page to reflect changes
+                } else {
+                    alert("Failed to update status: " + data.message);
+                }
+            })
+            .catch(error => {
+                alert("Error: " + error);
+            });
+    }
+
+    function approveProduct() {
+        updateProductStatus('approved');
+    }
+
+    function rejectProduct() {
+        updateProductStatus('rejected');
+    }
+</script>

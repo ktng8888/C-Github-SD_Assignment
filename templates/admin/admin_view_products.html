@@ -1,0 +1,534 @@
+<head>
+    <meta charset="UTF-8">
+    <title>Products</title>
+    <style>
+        .section-header {
+            margin-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .table_head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .role-filter select {
+            padding: 5px 8px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .clear_button,
+        .print_button {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            text-decoration: none;
+            background: white;
+            color: #333;
+            transition: all 0.3s ease;
+            /* Smooth transition */
+            cursor: pointer;
+            /* Pointer on hover */
+        }
+
+        .clear_button:hover,
+        .print_button:hover {
+            color: white;
+            background: #27ae60;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            /* Subtle shadow */
+        }
+
+        .print_button {
+            margin-top: 10px;
+        }
+
+        .print-btn {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 16px;
+        }
+
+        thead {
+            background-color: #f9fafc;
+        }
+
+        th {
+            color: #444;
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+        }
+
+        td {
+            font-size: 14px;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tbody tr:hover {
+            background-color: #f5f7fb;
+        }
+
+        .search-container {
+            text-align: right;
+            margin-bottom: 10px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-container input {
+            padding: 6px 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        .total_user {
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        /* Hover enhancements for icon buttons */
+        .icon-button {
+            display: inline-block;
+            padding: 6px 10px;
+            font-size: 14px;
+            color: #27ae60;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-left: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .icon-button:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.05);
+        }
+
+        /* Icon-specific color hover overrides */
+        .icon-add:hover {
+            background-color: #d4edda;
+            color: #218838;
+        }
+
+        .icon-view:hover {
+            color: white;
+            background-color: #27ae60;
+        }
+
+        .icon-delete:hover {
+            background-color: #f8d7da;
+            color: #c82333;
+        }
+
+        .confirm-btn,
+        .cancel-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .confirm-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .cancel-btn {
+            background-color: #ccc;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        /* Ensure the table fits content properly inside scroll */
+        .table-scroll table {
+            min-width: 800px;
+            /* or adjust based on column count */
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .table-scroll,
+            .table-scroll * {
+                visibility: visible;
+            }
+
+            .table-scroll {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+
+        /* handle table header when screen size change */
+        @media (max-width: 768px) {
+            .search-container {
+                align-items: stretch;
+            }
+
+            .table_head {
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .table_head>div {
+                width: 100%;
+            }
+
+            .role-filter {
+                order: 1;
+            }
+
+            .role-filter label {
+                display: block;
+                text-align: left;
+                margin-bottom: 5px;
+            }
+
+            .start_date label {
+                display: block;
+                text-align: left;
+            }
+
+            .table_head .role-filter {
+                order: 1;
+            }
+
+            .table_head div:nth-child(2) {
+                order: 2;
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+
+
+            }
+
+            .search-input {
+                text-align: left;
+                margin-top: 10px;
+                order: 3;
+            }
+
+            .search-input input {
+                width: 50%;
+            }
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 2% auto;
+            padding: 0;
+            border: none;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 12px 12px 0 0;
+            flex-shrink: 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .close {
+            color: #999;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #333;
+            background-color: #e9ecef;
+        }
+
+        .modal-body {
+            flex: 1;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #productDetailsFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0 0 12px 12px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 98%;
+                height: 95vh;
+                margin: 2.5% auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="section-header">
+        <h2>Products</h2>
+    </div>
+
+    <div class="table-container">
+        <form method="get" class="search-container">
+            <div class="table_head">
+                <div class="role-filter">
+                    <label for="categoryFilter">Filter: </label>
+                    <select name="category" id="categoryFilter" onchange="this.form.submit()">
+                        <option value="">Category</option>
+                        <option value="smartphones" {% if request.args.get('category')=='smartphones' %}selected{% endif %}>Smartphones</option>
+                        <option value="laptops" {% if request.args.get('category')=='laptops' %}selected{% endif %}>Laptops</option>
+                        <option value="tablets" {% if request.args.get('category')=='tablets' %}selected{% endif %}>Tablets</option>
+                        <option value="cameras" {% if request.args.get('category')=='cameras' %}selected{% endif %}>Cameras</option>
+                        <option value="audio" {% if request.args.get('category')=='audio' %}selected{% endif %}>Audio</option>
+                    </select>
+                    <select name="status" id="statusFilter" onchange="this.form.submit()">
+                        <option value="">Status</option>
+                        <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if request.args.get('status')=='approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if request.args.get('status')=='rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="sold" {% if request.args.get('status')=='sold' %}selected{% endif %}>Sold</option>
+                    </select>
+                </div>
+                <!-- <a href="{{ url_for('admin_add_user') }}" class="icon-button icon-add" title="Add User">
+                    <i class="fa-solid fa-user-plus"></i>
+                </a> -->
+
+                <!-- <div>
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date"
+                        value="{{ request.args.get('start_date', '') }}">
+
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+
+                    <button type="submit" class="apply_button">Apply</button>
+                </div> -->
+            </div>
+            <div class="search-input">
+                Search:
+                <input type="text" name="search" value="{{ request.args.get('search', '') }}"
+                    placeholder="Type to search..." onkeyup="if(event.key === 'Enter'){ this.form.submit(); }">
+                <a href="{{ url_for('admin_view_products') }}" class="clear_button">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th>Price</th>
+                        <th>Seller</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if products %}
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.title }}</td>
+                            <td>{{ product.category }}</td>
+                            <td>{{ product.brand }}</td>
+                            <td>{{ product.model }}</td>
+                            <td>{{ product.price }}</td>
+                            <td>{{ product.seller_username }}</td>
+                            <td>{{ product.status }}</td>
+                            <td>
+                               <div class="edit-delete-buttons">
+                                <a href="#" class="icon-button icon-view" title="View" onclick="openProductModal('{{ product.product_id }}')">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align:center; color: #999;">No Products Found</td>
+                    </tr>
+                    {% endif %}        
+                </tbody>
+                <tfoot>
+                </tfoot>
+            </table>
+        </div>
+
+
+        <div class="total_user">
+            Showing {{ filtered_product_count }} of {{ total_product_count }} products  </div>
+
+        <div class="print-btn">
+            <button onclick="printTable()" class="print_button">Print Table</button>
+        </div>
+
+    </div>
+
+    <!-- Modal Popup -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Product Details</h2>
+                <span class="close" onclick="closeProductModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <iframe id="productDetailsFrame" src="" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+
+<script>
+    function printTable() {
+        const originalContent = document.body.innerHTML;
+        const tableContent = document.querySelector('.table-scroll').innerHTML;
+        const printWindow = window.open('', '', 'height=600,width=800');
+        printWindow.document.write('<html><head><title>Print Table</title>');
+        printWindow.document.write('<style>table { width: 100%; border-collapse: collapse; } th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<h2>Order Table</h2>');
+        printWindow.document.write(tableContent);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    }
+
+    function openProductModal(productId) {
+            // Set the iframe source to load the product details page
+            const iframe = document.getElementById('productDetailsFrame');
+            iframe.src = `/product/details/${productId}`;
+
+            // Update modal title
+            document.getElementById('modalTitle').textContent = 'Product Details';
+
+            // Show modal
+            document.getElementById('productModal').style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+    function closeProductModal() {
+        document.getElementById('productModal').style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restore scrolling
+
+        // Clear iframe source to stop loading
+        document.getElementById('productDetailsFrame').src = '';
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function (event) {
+        const modal = document.getElementById('productModal');
+        if (event.target === modal) {
+            closeProductModal();
+        }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeProductModal();
+        }
+    });
+
+</script>
