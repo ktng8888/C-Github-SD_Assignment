@@ -8,6 +8,14 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from collections import defaultdict #yy
 
+#====================================================================
+# Strategy Pattern
+# Usage : Admin Dashboard Order Component
+# Flask Route : @app.route('/admin/admin_dashboard')
+#====================================================================
+
+
+
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
@@ -33,7 +41,7 @@ def get_feedback_for_seller(seller_id):
         with open("databases/feedback.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 8 and parts[3] == seller_id:  # parts[3] 是卖家ID
+                if len(parts) >= 8 and parts[3] == seller_id: 
                     feedbacks.append({
                         'buyer_username': parts[4],
                         'rating': int(parts[5]),
@@ -2279,7 +2287,8 @@ def admin_dashboard():
                 }
                 
                 # Only count approved or sold products for pie chart
-                if status in ['approved', 'sold']:
+                #if status in ['approved', 'sold']:
+                if category in ['smartphone', 'laptop', 'tablet', 'camera', 'audio']:
                     category_counts[category] = category_counts.get(category, 0) + 1
 
                 # Count all statuses for doughnut chart
