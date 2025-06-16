@@ -23,4 +23,4 @@
 23||KeanTiong||Audio||pending||1||1||1||1||"1"||1||11||KeanTiong_1747151810_main.jpg||KeanTiong_1747151810_0.jpg
 24||Tzenn||Camera||sold||1||1||1||1||"1"||111||111||Tzenn_1747153062_main.jpg||
 25||KeanTiong||Smartphone||approved||s||s||s||2023||"s"||300||10||KeanTiong_1749618969_main.jpg||
-26||KeanTiong||Camera||pending||Cam Pro||Apple||CP01||2025||"Best"||400||20||KeanTiong_1749979531_main.jpg||
+26||KeanTiong||Camera||approved||Cam Pro||Apple||CP01||2025||"Best"||400||20||KeanTiong_1749979531_main.jpg||

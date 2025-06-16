@@ -437,7 +437,7 @@
                 <div class="card-header">
                     <h3 class="card-title">Orders</h3>
                     <div class="chart-controls">
-                        <select class="select" id="chartView" onchange="updateChart()">
+                        <select class="select" id="chartView" onchange="updateOrderChart()">
                             <option value="monthly">Monthly</option>
                             <option value="weekly">Weekly</option>
                             <option value="yearly">Yearly</option>
@@ -446,7 +446,7 @@
                 </div>
                 <div class="card-content">
                     <div class="chart-container">
-                        <canvas id="barChart"></canvas>
+                        <canvas id="orderChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -482,16 +482,6 @@
                 </div>
                 <div class="card-content" style="padding: 0;">
                     <div class="table-container">
-                        <!-- <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Username</th>
-                                    <th>Phone</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                </tr>
-                            </thead>
-                        </table> -->
                         <div class="table-scroll">
                             <table class="table">
                                 <thead>
@@ -576,23 +566,27 @@
             </div>
 
     <script>
-        // Data
-        const chartData = JSON.parse('{{ order_chart_data | tojson | safe }}');
+        // Order Chart Data with Strategy Pattern Implementation
+        const orderChartData = JSON.parse('{{ order_chart_data | tojson | safe }}');
+        const productChartData = JSON.parse('{{ product_chart_data | tojson | safe }}');
+        let orderChart;
 
-        // Chart instances
-        let barChart, pieChart, doughnutChart;
-
-        // Initialize charts
-        function initCharts() {
-            // Bar Chart
-            const barCtx = document.getElementById('barChart').getContext('2d');
-            barChart = new Chart(barCtx, {
+        // Initialize Order Chart with Strategy Pattern
+        function initOrderChart() {
+            const ctx = document.getElementById('orderChart').getContext('2d');
+            
+            // Set default view from template or use 'monthly'
+            const defaultView = '{{ current_view | default("monthly") }}';
+            document.getElementById('chartView').value = defaultView;
+            
+            // Initialize chart with current data
+            orderChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: chartData.monthly.map(d => d.label),
+                    labels: orderChartData.map(item => item.label),
                     datasets: [{
-                        label: 'Collections',
-                        data: chartData.monthly.map(d => d.collections),
+                        label: 'Orders',
+                        data: orderChartData.map(item => item.collections),
                         backgroundColor: '#27ae60',
                         borderRadius: 2
                     }]
@@ -621,17 +615,26 @@
                             border: {
                                 display: false
                             },
+                            beginAtZero: true,
                             max: 10
                         }
                     }
                 }
             });
+        }
 
-            // Pie Chart
-            const productChartData = JSON.parse('{{ product_chart_data | tojson | safe }}');
+        // Update Order Chart based on selected view
+        function updateOrderChart() {
+            const viewType = document.getElementById('chartView').value;
+            
+            // Reload the page with the new view type parameter
+            window.location.href = `${window.location.pathname}?view=${viewType}`;
+        }
 
-            const pieCtx = document.getElementById('pieChart').getContext('2d');
-            pieChart = new Chart(pieCtx, {
+        // Initialize Product Category Pie Chart
+        function initPieChart() {
+            const ctx = document.getElementById('pieChart').getContext('2d');
+            new Chart(ctx, {
                 type: 'pie',
                 data: {
                     labels: productChartData.categories.labels,
@@ -646,18 +649,18 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'left', 
+                            position: 'left',
                             labels: {
                                 boxWidth: 12,
                                 padding: 20,
                                 font: {
-                                    size: 12   
-                                },
+                                    size: 12
+                                }
                             }
                         },
                         tooltip: {
                             callbacks: {
-                                label: function (context) {
+                                label: function(context) {
                                     const label = context.label || '';
                                     const value = context.raw || 0;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -669,18 +672,18 @@
                     }
                 }
             });
+        }
 
-            // Doughnut Chart
-
-            const productChartStatusData = JSON.parse('{{ product_chart_data | tojson | safe }}');
-            const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
-            doughnutChart = new Chart(doughnutCtx, {
+        // Initialize Product Status Doughnut Chart
+        function initDoughnutChart() {
+            const ctx = document.getElementById('doughnutChart').getContext('2d');
+            new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: productChartStatusData.status.labels,
+                    labels: productChartData.status.labels,
                     datasets: [{
-                        data: productChartStatusData.status.data,
-                        backgroundColor: productChartStatusData.status.colors,
+                        data: productChartData.status.data,
+                        backgroundColor: productChartData.status.colors,
                         borderWidth: 0
                     }]
                 },
@@ -701,7 +704,7 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: function (context) {
+                                label: function(context) {
                                     const label = context.label || '';
                                     const value = context.raw || 0;
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -713,20 +716,6 @@
                     }
                 }
             });
-        }
-
-        // Update bar chart based on selected view
-        function updateChart() {
-            const view = document.getElementById('chartView').value;
-            const data = chartData[view];
-
-            barChart.data.labels = data.map(d => d.label);
-            barChart.data.datasets[0].data = data.map(d => d.collections);
-
-            // Update y-axis max based on view
-            barChart.options.scales.y.max = view === 'yearly' ? 70 : 10;
-
-            barChart.update();
         }
 
         // Populate tables
@@ -780,7 +769,7 @@
             });
         }
 
-        // feedback chart
+        // Feedback chart animation
         function animateFeedbackStats(feedbackData) {
             // Calculate statistics
             const totalFeedback = feedbackData.length;
@@ -825,15 +814,15 @@
             window.requestAnimationFrame(step);
         }
 
-
         // Initialize everything when page loads
-        document.addEventListener('DOMContentLoaded', function () {
-            initCharts();
+        document.addEventListener('DOMContentLoaded', function() {
+            initOrderChart();
+            initPieChart();
+            initDoughnutChart();
             populateTables();
 
-            // Get feedback data from the backend (now passed dynamically)
-            const feedbackData = JSON.parse('{{ feedback_data | tojson | safe }}');
-
+            // Get feedback data from the backend
+            const feedbackData = JSON.parse('{{ feedback_stats | tojson | safe }}');
             animateFeedbackStats(feedbackData);
         });
     </script>

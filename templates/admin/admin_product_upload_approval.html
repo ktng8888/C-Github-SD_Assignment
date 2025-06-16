@@ -454,7 +454,12 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    window.location.reload();  // reload page to reflect changes
+                //window.location.reload();  // reload page to reflect changes
+
+                window.parent.closeProductModal();
+                window.parent.location.reload();
+                window.parent.location.href = '/admin/admin_product_upload_approval?tab=approved';
+
                 } else {
                     alert("Failed to update status: " + data.message);
                 }

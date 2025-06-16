@@ -3,18 +3,150 @@ import os
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from collections import defaultdict #yy
 
-#====================================================================
+#==================================================================================
 # Strategy Pattern
-# Usage : Admin Dashboard Order Component
+# Usage : Admin Dashboard Order Bar Chart
 # Flask Route : @app.route('/admin/admin_dashboard')
+#==================================================================================
+class OrderDisplayStrategy(ABC):
+    @abstractmethod
+    def get_orders_data(self, raw_orders):
+        pass
+
+class MonthlyOrderStrategy(OrderDisplayStrategy):
+    def get_orders_data(self, raw_orders):
+        monthly_counts = [0] * 12
+        for order in raw_orders:
+            if order['order_time_obj'].month:
+                monthly_counts[order['order_time_obj'].month - 1] += 1
+        return [{"label": m, "collections": c} for m, c in zip(
+            ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            monthly_counts)]
+
+class WeeklyOrderStrategy(OrderDisplayStrategy):
+    def get_orders_data(self, raw_orders):
+        weekly_counts = [0] * 53
+        for order in raw_orders:
+            week_num = order['order_time_obj'].isocalendar()[1]
+            if 1 <= week_num <= 53:
+                weekly_counts[week_num - 1] += 1
+        return [{"label": f"Week {i+1}", "collections": c} 
+               for i, c in enumerate(weekly_counts)]
+
+class YearlyOrderStrategy(OrderDisplayStrategy):
+    def get_orders_data(self, raw_orders):
+        yearly_counts = {}
+        for order in raw_orders:
+            year = order['order_time_obj'].year
+            yearly_counts[year] = yearly_counts.get(year, 0) + 1
+        return [{"label": str(y), "collections": c} 
+               for y, c in sorted(yearly_counts.items())]
+
+class OrderContext:
+    def __init__(self):
+        self._strategy = MonthlyOrderStrategy()  # Default strategy
+    
+    def set_strategy(self, strategy):
+        self._strategy = strategy
+    
+    def get_order_data(self, raw_orders):
+        return self._strategy.get_orders_data(raw_orders)
+
+
+#==================================================================================
+# Observer Pattern
+# Usage : Notify sellers when product status changes
+# Flask Route : @app.route('/admin/update_product_status', methods=['POST'])
+#==================================================================================
+class ProductStatusSubject:
+    def __init__(self):
+        self._observers = []
+
+    def attach(self, observer):
+        if observer not in self._observers:
+            self._observers.append(observer)
+
+    def detach(self, observer):
+        self._observers.remove(observer)
+
+    def notify(self, product_id, new_status, seller_id):
+        for observer in self._observers:
+            observer.update(product_id, new_status, seller_id)
+
+class ProductStatusObserver(ABC):
+    @abstractmethod
+    def update(self, product_id, new_status, seller_id):
+        pass
+
+# Concrete Observer - Console Logger
+class ConsoleNotificationObserver(ProductStatusObserver):
+    def update(self, product_id, new_status, seller_id):
+        print(f"\n[OBSERVER] Notification: Product {product_id} status changed to {new_status}")
+        print(f"Seller {seller_id} should be notified about this change\n")
+
+class DatabaseNotificationObserver(ProductStatusObserver):
+    def update(self, product_id, new_status, seller_id):
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        highest_id = 0
+        notification_id = 0;
+        # Read existing notification
+        try:    
+            with open("databases/notification.txt", "r") as file:
+                for line in file:
+                    parts = line.strip().split('||')
+                    if len(parts) >= 6:
+                        try:
+                            current_id = int(parts[0])
+                            if current_id > highest_id:
+                                highest_id = current_id
+                        except ValueError:
+                            pass
+        except FileNotFoundError:
+            pass
+        
+        notification_id = str(highest_id + 1)
+
+        try:
+            with open("databases/notification.txt", "a") as file:
+                file.write(f"{notification_id}||{product_id}||{seller_id}||{new_status}||{timestamp}||False\n")
+        except Exception as e:
+            print(f"Error saving notification: {e}")
+
+# Global subject instance
+product_status_subject = ProductStatusSubject()
+product_status_subject.attach(ConsoleNotificationObserver())
+product_status_subject.attach(DatabaseNotificationObserver())
+
+
+#====================================================================
+# Factory Pattern
+# Usage : 
+# Flask Route : 
 #====================================================================
 
 
+#====================================================================
+# Proxy Pattern
+# Usage : 
+# Flask Route : 
+#====================================================================
+
+
+
+#====================================================================
+# Facade Pattern
+# Usage : 
+# Flask Route : 
+#====================================================================
+
+#====================================================================
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -258,6 +390,120 @@ def admin_register():
     
     return render_template('admin/admin_register.html')
 # yy admin register end
+
+'''
+@app.route('/user_notifications')
+@login_required
+def get_user_notifications():
+    notifications = []
+    unseen_count = 0
+    
+    try:
+        with open("databases/notification.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 6 and parts[2] == current_user.id:
+                    # Get product title
+                    product_title = "Unknown Product"
+                    try:
+                        with open("databases/products.txt", "r") as pfile:
+                            for pline in pfile:
+                                pparts = pline.strip().split('||')
+                                if len(pparts) >= 5 and pparts[0] == parts[1]:
+                                    product_title = pparts[4]
+                                    break
+                    except FileNotFoundError:
+                        pass
+                    
+                    is_seen = parts[5] == "True"
+                    if not is_seen:
+                        unseen_count += 1
+                    
+                    # Format notification message based on status
+                    if parts[3] == 'approved':
+                        title = "Product Approved!"
+                        message = f'Your "{product_title}" has been approved and is now listed for sale.'
+                        icon_type = "approved"
+                    elif parts[3] == 'rejected':
+                        title = "Product Rejected"
+                        message = f'Your "{product_title}" listing was rejected. Please review and try again.'
+                        icon_type = "rejected"
+                    else:
+                        title = "Product Status Updated"
+                        message = f'Your "{product_title}" status has been updated to {parts[3]}.'
+                        icon_type = "info"
+                    
+                    notifications.append({
+                        'notification_id': parts[0],
+                        'product_id': parts[1],
+                        'product_title': product_title,
+                        'status': parts[3],
+                        'timestamp': parts[4],
+                        'is_seen': is_seen,
+                        'title': title,
+                        'message': message,
+                        'icon_type': icon_type,
+                        'time_ago': get_time_ago(parts[4])  # You'll need to create this function
+                    })
+    except FileNotFoundError:
+        pass
+    
+    # Sort by timestamp (newest first)
+    notifications.sort(key=lambda x: x['timestamp'], reverse=True)
+    
+    return jsonify({
+        'notifications': notifications,
+        'unseen_count': unseen_count
+    })
+
+def get_time_ago(timestamp_str):
+    """Convert timestamp to 'time ago' format"""
+    try:
+        timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+        now = datetime.now()
+        diff = now - timestamp
+        
+        if diff.days > 0:
+            return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours} hour{'s' if hours > 1 else ''} ago"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+        else:
+            return "Just now"
+    except ValueError:
+        return "Unknown"
+
+@app.route('mark_notifications_seen', methods=['POST'])
+@login_required
+def mark_notifications_seen():
+    try:
+        # Read all notifications
+        with open("databases/notification.txt", "r") as file:
+            lines = file.readlines()
+        
+        # Update notifications for current user
+        updated_lines = []
+        for line in lines:
+            parts = line.strip().split('||')
+            if len(parts) >= 6 and parts[2] == current_user.id:
+                parts[5] = "True"  # Mark as seen
+                updated_lines.append('||'.join(parts) + '\n')
+            else:
+                updated_lines.append(line)
+        
+        # Write back to file
+        with open("databases/notification.txt", "w") as file:
+            file.writelines(updated_lines)
+            
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+'''
 
 @app.route('/products')
 @login_required
@@ -936,6 +1182,9 @@ def account_listings():
     active_tab = request.args.get('tab', 'listing')
     context = ProductContext()
 
+    notifications = []
+    unseen_count = 0
+
     try:
         with open("databases/products.txt", "r") as file:
             for line in file:
@@ -969,13 +1218,46 @@ def account_listings():
     listing_count = len(context.listing_products)
     pending_count = len(context.pending_products)
     
+    try:
+        with open("databases/notification.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 6 and parts[2] == current_user.id:
+                    # Get product title
+                    product_title = "Unknown Product"
+                    with open("databases/products.txt", "r") as pfile:
+                        for pline in pfile:
+                            pparts = pline.strip().split('||')
+                            if len(pparts) >= 5 and pparts[0] == parts[1]:
+                                product_title = pparts[4]
+                                break
+                    
+                    is_seen = parts[5] == "True"
+                    if not is_seen:
+                        unseen_count += 1
+                    
+                    notifications.append({
+                        'notification_id': parts[0],
+                        'product_id': parts[1],
+                        'product_title': product_title,
+                        'status': parts[3],
+                        'timestamp': parts[4],
+                        'is_seen': is_seen
+                    })
+    except FileNotFoundError:
+        pass
+    
     return render_template('account/account.html', 
                           active_page='listings',
                           active_tab=active_tab,
                           listing_products=context.listing_products,
                           pending_products=context.pending_products,
                           listing_count=listing_count,
-                          pending_count=pending_count)
+                          pending_count=pending_count,
+
+                          notifications=notifications[-5:],  # Show last 5
+                          notification_count=len(notifications),
+                          unseen_count=unseen_count)
 
 @app.route('/account/sold')
 @login_required
@@ -2177,15 +2459,17 @@ def admin_product_upload_approval():
 def update_product_status():
     product_id = request.form.get('product_id')
     new_status = request.form.get('status')
-
+    
     updated_lines = []
     product_updated = False
+    seller_id = None
 
     try:
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
                 if len(parts) >= 12 and parts[0] == product_id:
+                    seller_id = parts[1]  # Get seller ID before updating
                     parts[3] = new_status  # update status
                     product_updated = True
                     updated_lines.append('||'.join(parts) + '\n')
@@ -2195,12 +2479,17 @@ def update_product_status():
         if product_updated:
             with open("databases/products.txt", "w") as file:
                 file.writelines(updated_lines)
+            
+            # NOTIFY ALL OBSERVERS
+            product_status_subject.notify(product_id, new_status, seller_id)
+            
             return jsonify({'success': True, 'message': 'Status updated'})
         else:
             return jsonify({'success': False, 'message': 'Product not found'}), 404
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+  
 # yy update_product_status end
 
 
@@ -2215,6 +2504,202 @@ def manage_feedback():
 # yy admin manage feedback end
 
 # yy admin dashboard start
+@app.route('/admin/admin_dashboard')
+@login_required
+def admin_dashboard():
+    # Initialize metrics containers
+    metrics = {
+        "profit": 0,          # sum of completed order payments
+        "customer": 0,        # count users with role 'user'
+        "orders": 0,          # count all orders
+        "request": 0          # count pending products
+    }
+
+    # Initialize data structures
+    raw_orders = []
+    products_dict = {}
+    user_details = []
+    status_counts = {
+        "pending": 0,
+        "approved": 0,
+        "rejected": 0,
+        "sold": 0
+    }
+    category_counts = {}
+
+    # Get view type from request (default to monthly)
+    view_type = request.args.get('view', 'monthly')
+
+    # 1. Load User Data
+    try:
+        with open('databases/member_detail.txt', 'r') as f:
+            for line in f:
+                parts = line.strip().split("||")
+                if len(parts) >= 7:
+                    user_details.append({
+                        "username": parts[0],
+                        "phone": parts[1],
+                        "email": parts[2],
+                        "role": parts[6]
+                    })
+                    if parts[6] == 'user':
+                        metrics["customer"] += 1
+    except FileNotFoundError:
+        flash('Member data file not found', 'error')
+
+    # 2. Load Product Data
+    try:
+        with open('databases/products.txt', 'r') as f:
+            for line in f:
+                parts = line.strip().split("||")
+                if len(parts) >= 5:
+                    product_id = parts[0].strip()
+                    category = parts[2].strip().lower()
+                    status = parts[3].strip().lower()
+                    
+                    products_dict[product_id] = {
+                        'title': parts[4].strip(),
+                        'category': category,
+                        'status': status
+                    }
+
+                    # Count by status
+                    if status in status_counts:
+                        status_counts[status] += 1
+                    
+                    # Count pending products
+                    if status == 'pending':
+                        metrics["request"] += 1
+                    
+                    # Count by category
+                    if category in ['smartphone', 'laptop', 'tablet', 'camera', 'audio']:
+                        category_counts[category] = category_counts.get(category, 0) + 1
+    except FileNotFoundError:
+        flash('Product data file not found', 'error')
+
+    # 3. Load Order Data
+    try:
+        with open('databases/orders.txt', 'r') as f:
+            for line in f:
+                parts = line.strip().split("||")
+                if len(parts) >= 8:
+                    metrics["orders"] += 1
+                    
+                    # Calculate profit from completed orders
+                    if "complete" in parts[7].lower():
+                        try:
+                            metrics["profit"] += float(parts[5].strip())
+                        except (ValueError, IndexError):
+                            pass
+                    
+                    # Parse order time
+                    try:
+                        order_time = datetime.strptime(parts[3], "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        continue
+                    
+                    # Get product title
+                    product_id = parts[2].strip()
+                    product_title = products_dict.get(product_id, {}).get('title', 'Unknown Product')
+                    
+                    raw_orders.append({
+                        'order_id': parts[0],
+                        'buyer': parts[1],
+                        'product_id': product_id,
+                        'product_title': product_title,
+                        'order_time_str': parts[3],
+                        'order_time_obj': order_time,
+                        'payment_method': parts[4],
+                        'amount_paid': parts[5],
+                        'status': parts[7].lower(),
+                        'delivered_date': parts[8] if len(parts) > 8 else None
+                    })
+    except FileNotFoundError:
+        flash('Order data file not found', 'error')
+
+    # STRATEGY PATTERN IMPLEMENTATION FOR ORDER DATA
+    order_context = OrderContext()
+    
+    # Set strategy based on view type
+    if view_type == 'weekly':
+        order_context.set_strategy(WeeklyOrderStrategy())
+    elif view_type == 'yearly':
+        order_context.set_strategy(YearlyOrderStrategy())
+    else:  # default monthly
+        order_context.set_strategy(MonthlyOrderStrategy())
+    
+    # Process order data using selected strategy
+    order_chart_data = order_context.get_order_data(raw_orders)
+
+    # Prepare product category data for pie chart
+    category_labels = []
+    category_data = []
+    colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6']
+    
+    for i, (category, count) in enumerate(sorted(category_counts.items())):
+        category_labels.append(category.capitalize())
+        category_data.append(count)
+        if i >= len(colors):
+            colors.append(colors[i % len(colors)])
+
+    # Prepare product status data for doughnut chart
+    status_labels = ['Pending', 'Approved', 'Rejected', 'Sold']
+    status_data = [
+        status_counts['pending'],
+        status_counts['approved'],
+        status_counts['rejected'],
+        status_counts['sold']
+    ]
+    status_colors = ['#f59e0b', '#10b981', '#ef4444', '#3b82f6']
+
+    # Prepare product chart data
+    product_chart_data = {
+        "categories": {
+            "labels": category_labels,
+            "data": category_data,
+            "colors": colors
+        },
+        "status": {
+            "labels": status_labels,
+            "data": status_data,
+            "colors": status_colors
+        }
+    }
+
+    # Load feedback data for dashboard
+    feedback_data = []
+    try:
+        with open('databases/feedback.txt', 'r') as file:
+            for line in file:
+                parts = [part.strip() for part in line.split('||')]
+                if len(parts) >= 8:
+                    feedback_data.append({
+                        'rating': int(parts[5]),
+                        'comment': parts[6],
+                        'timestamp': parts[7]
+                    })
+    except FileNotFoundError:
+        pass
+
+    # Calculate feedback statistics
+    feedback_stats = {
+        'total': len(feedback_data),
+        'positive': sum(1 for f in feedback_data if f['rating'] >= 4),
+        'negative': len(feedback_data) - sum(1 for f in feedback_data if f['rating'] >= 4),
+        'average': round(sum(f['rating'] for f in feedback_data) / len(feedback_data), 1) if feedback_data else 0
+    }
+
+    return render_template('admin/admin_page.html',
+                         active_page='admin_dashboard',
+                         order_chart_data=order_chart_data,
+                         product_chart_data=product_chart_data,
+                         user_details=user_details,
+                         order_details=raw_orders[:10],  # Show recent 10 orders
+                         metrics=metrics,
+                         feedback_stats=feedback_stats,
+                         current_view=view_type)
+
+'''
 @app.route('/admin/admin_dashboard')
 @login_required
 def admin_dashboard():
@@ -2441,6 +2926,7 @@ def admin_dashboard():
                            metrics=metrics,
                            feedback_data=feedback_data)
 # yy admin dashboard end
+'''
 
 #yy admin profile start
 @app.route('/admin/admin_profile/<username>', methods=['GET', 'POST'])
