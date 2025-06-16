@@ -1,2 +1,2 @@
 {notification_id}||{product_id}||{seller_id}||{new_status}||{timestamp}||{is_seen}
-1||26||KeanTiong||approved||2025-06-16 15:25:30||False
+1||26||KeanTiong||approved||2025-06-16 15:25:30||True

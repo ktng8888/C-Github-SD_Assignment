@@ -134,7 +134,7 @@ product_status_subject.attach(DatabaseNotificationObserver())
 
 #====================================================================
 # Proxy Pattern
-# Usage : 
+# Usage : Lazy loading of product/profile images
 # Flask Route : 
 #====================================================================
 
@@ -270,8 +270,8 @@ def main():
     except FileNotFoundError:
         # If the file doesn't exist, we'll just show empty featured products
         pass
-    
-    return render_template('main.html', featured_products=featured_products)
+
+    return render_template('main.html',featured_products=featured_products)
 
 @app.route('/require_login')
 def require_login():
@@ -391,17 +391,18 @@ def admin_register():
     return render_template('admin/admin_register.html')
 # yy admin register end
 
-'''
+
 @app.route('/user_notifications')
 @login_required
-def get_user_notifications():
+def user_notifications():
     notifications = []
     unseen_count = 0
-    
+
     try:
         with open("databases/notification.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
+                
                 if len(parts) >= 6 and parts[2] == current_user.id:
                     # Get product title
                     product_title = "Unknown Product"
@@ -409,12 +410,12 @@ def get_user_notifications():
                         with open("databases/products.txt", "r") as pfile:
                             for pline in pfile:
                                 pparts = pline.strip().split('||')
-                                if len(pparts) >= 5 and pparts[0] == parts[1]:
+                                if len(pparts) >= 11 and pparts[0] == parts[1]:
                                     product_title = pparts[4]
                                     break
                     except FileNotFoundError:
                         pass
-                    
+
                     is_seen = parts[5] == "True"
                     if not is_seen:
                         unseen_count += 1
@@ -443,7 +444,7 @@ def get_user_notifications():
                         'title': title,
                         'message': message,
                         'icon_type': icon_type,
-                        'time_ago': get_time_ago(parts[4])  # You'll need to create this function
+                        'time_ago': get_time_ago(parts[4])
                     })
     except FileNotFoundError:
         pass
@@ -476,7 +477,7 @@ def get_time_ago(timestamp_str):
     except ValueError:
         return "Unknown"
 
-@app.route('mark_notifications_seen', methods=['POST'])
+@app.route('/mark_notifications_seen', methods=['POST'])
 @login_required
 def mark_notifications_seen():
     try:
@@ -503,7 +504,7 @@ def mark_notifications_seen():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-'''
+
 
 @app.route('/products')
 @login_required
@@ -945,6 +946,11 @@ def sell():
     
     # If GET request, just render the template
     return render_template('sell.html')
+
+@app.route('/term_and_condition')
+@login_required
+def term_and_condition():
+    return render_template('term_and_condition.html')
 
 @app.route('/account')
 @login_required
