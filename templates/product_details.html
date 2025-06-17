@@ -34,7 +34,7 @@
         <div class="product-section">
           <div class="product-images">
             <img
-              src="{{ url_for('static', filename='uploads/product_images/' + product.main_photo) }}"
+              src="{{ product.main_photo }}"
               alt="{{ product.title }}"
               class="main-image"
             />
@@ -43,7 +43,7 @@
             <div class="image-thumbnails">
               <!-- Main photo thumbnail -->
               <img
-                src="{{ url_for('static', filename='uploads/product_images/' + product.main_photo) }}"
+                src="{{ product.main_photo }}"
                 alt="Main image"
                 class="thumbnail active"
               />
@@ -52,7 +52,7 @@
               {% for photo in product.additional_photos %} 
               {% if photo %}
               <img
-                src="{{ url_for('static', filename='uploads/product_images/' + photo) }}"
+                src="{{photo}}"
                 alt="Thumbnail {{ loop.index }}"
                 class="thumbnail"
               />

@@ -116,7 +116,9 @@
 
           <div class="products-grid">
             {% if featured_products %} {% for product in featured_products %}
+            
             <div class="product-card">
+              <a href="{{ url_for('product_details', product_id=product.id) }}" class="product-link">
               <div class="product-image">
                 {% if product.main_photo %}
                 <img
@@ -143,8 +145,9 @@
                   <div class="product-brand">{{ product['brand'] }}</div>
                 </div>
               </div>
-              <a href="/products/{{ product['id'] }}" class="product-link"></a>
+              </a>
             </div>
+            
             {% endfor %} {% else %}
             <div class="no-results">
               <p>No featured products available</p>

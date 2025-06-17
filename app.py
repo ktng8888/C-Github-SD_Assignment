@@ -8,11 +8,10 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from collections import defaultdict #yy
 
-#==================================================================================
+#================================================================================================================
 # Strategy Pattern
 # Usage : Admin Dashboard Order Bar Chart
 # Flask Route : @app.route('/admin/admin_dashboard')
-#==================================================================================
 class OrderDisplayStrategy(ABC):
     @abstractmethod
     def get_orders_data(self, raw_orders):
@@ -57,13 +56,12 @@ class OrderContext:
     
     def get_order_data(self, raw_orders):
         return self._strategy.get_orders_data(raw_orders)
+#================================================================================================================
 
-
-#==================================================================================
+#================================================================================================================
 # Observer Pattern
-# Usage : Notify sellers when product status changes
+# Usage : Notify admin and seller when product status changes
 # Flask Route : @app.route('/admin/update_product_status', methods=['POST'])
-#==================================================================================
 class ProductStatusSubject:
     def __init__(self):
         self._observers = []
@@ -78,18 +76,36 @@ class ProductStatusSubject:
     def notify(self, product_id, new_status, seller_id):
         for observer in self._observers:
             observer.update(product_id, new_status, seller_id)
-
+    
 class ProductStatusObserver(ABC):
     @abstractmethod
     def update(self, product_id, new_status, seller_id):
         pass
 
-# Concrete Observer - Console Logger
-class ConsoleNotificationObserver(ProductStatusObserver):
+'''Notify Admin'''
+class AdminNotificationObserver(ProductStatusObserver):
     def update(self, product_id, new_status, seller_id):
-        print(f"\n[OBSERVER] Notification: Product {product_id} status changed to {new_status}")
-        print(f"Seller {seller_id} should be notified about this change\n")
-
+        """Only for admin dashboard notifications"""
+        
+        with open("databases/products.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 11 and parts[0] == product_id:
+                    product_title = parts[4]
+        
+        message = f"Product {product_title} status changed to {new_status}. Notification successfully sent to seller {seller_id}."
+        try:
+            from flask import flash
+            flash(message,"admin_notification")
+        except ImportError:
+            print("Flask not available for popup notification")
+        except RuntimeError:
+            print("Outside of Flask application context")
+            
+'''
+Store to notification.txt 
+Seller can check notification through notification button
+'''
 class DatabaseNotificationObserver(ProductStatusObserver):
     def update(self, product_id, new_status, seller_id):
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -121,32 +137,210 @@ class DatabaseNotificationObserver(ProductStatusObserver):
 
 # Global subject instance
 product_status_subject = ProductStatusSubject()
-product_status_subject.attach(ConsoleNotificationObserver())
+product_status_subject.attach(AdminNotificationObserver())
 product_status_subject.attach(DatabaseNotificationObserver())
+#================================================================================================================
 
 
-#====================================================================
+#================================================================================================================
 # Factory Pattern
-# Usage : 
-# Flask Route : 
-#====================================================================
+# Usage : Seller sells an Electronic Item (Product Creation)
+# Flask Route : @app.route('/sell', methods=['GET', 'POST'])
+class ProductFactory:
+    @staticmethod
+    def create_product(parts):
+        """Creates a product with category-specific features from pipe-delimited data"""
+            
+        main_photo_proxy = ProductImageProxy(parts[11]).display()
+        additional_photos_proxies = [
+            ProductImageProxy(photo).display() 
+            for photo in parts[12:] 
+            if photo.strip()
+        ] if len(parts) > 12 else []
+        
+        common_data = {    
+            'id': parts[0],
+            'seller': parts[1],
+            'category': parts[2],
+            'status': parts[3],
+            'title': parts[4],
+            'brand': parts[5],
+            'model': parts[6],
+            'year': parts[7],
+            'description': parts[8].strip('"'),
+            'price': parts[9],
+            'shipping_cost': parts[10],
+            'main_photo': main_photo_proxy,
+            'additional_photos': additional_photos_proxies
+        }
+
+        category_map = {
+            'smartphone': Smartphone,
+            'laptop': Laptop,
+            'tablet': Tablet,
+            'camera': Camera,
+            'audio': Audio
+        }
+
+        return category_map.get(parts[2].lower(), ElectronicProduct)(common_data)
+
+class ElectronicProduct:
+    def __init__(self, data):
+        self.data = data
+    
+    def get_recommendation_brands(self):
+        return ['Generic Brand']
+
+class Smartphone(ElectronicProduct):
+    def get_recommendation_brands(self):
+        return ['Apple', 'Samsung', 'Xiaomi', 'Google', 'OnePlus']
+
+class Laptop(ElectronicProduct):
+    def get_recommendation_brands(self):
+        return ['Apple', 'Dell', 'HP', 'Lenovo', 'Asus']
+
+class Tablet(ElectronicProduct):
+    def get_recommendation_brands(self):
+        return ['Apple', 'Samsung', 'Microsoft', 'Huawei', 'Lenovo']
+
+class Camera(ElectronicProduct):
+    def get_recommendation_brands(self):
+        return ['Canon', 'Nikon', 'Sony', 'Fujifilm', 'Panasonic']
+
+class Audio(ElectronicProduct):
+    def get_recommendation_brands(self):
+        return ['Sony', 'Bose', 'Sennheiser', 'JBL', 'Audio-Technica']
+#================================================================================================================
 
 
-#====================================================================
+#================================================================================================================
 # Proxy Pattern
-# Usage : Lazy loading of product/profile images
+# Usage : Handle Lazy Loading of Product Images
 # Flask Route : 
-#====================================================================
+# - @app.route('/products')
+# - @app.route('/product/<product_id>')
+# - @app.route('/account/...')
+
+class ImageSubject(ABC):
+    @abstractmethod
+    def display(self) -> str:
+        pass
+
+class RealProductImage(ImageSubject):
+    def __init__(self, filename):
+        self.filename = filename
+        self._verify_image()
+
+    def display(self):
+        return f"/static/uploads/product_images/{self.filename}"
+
+    def __str__(self):
+        """String representation"""
+        return self.display()
+
+    def _verify_image(self):
+        if not os.path.exists(f'static/uploads/product_images/{self.filename}'):
+            raise FileNotFoundError(f"Image {self.filename} not found")
+
+class ProductImageProxy(ImageSubject):
+    def __init__(self, filename):
+        self.filename = filename
+        self._real_image = None
+
+    def display(self):
+        if self._real_image is None:
+            try:
+                self._real_image = RealProductImage(self.filename)
+            except FileNotFoundError:
+                return "/static/images/default-product.jpg"
+        return self._real_image.display()
+    
+    def __str__(self):
+        return self.display()
+#================================================================================================================
 
 
-
-#====================================================================
+#================================================================================================================
 # Facade Pattern
-# Usage : 
+# Usage : Handle all authentication logic
 # Flask Route : 
-#====================================================================
+# - @app.route('/login', methods=['GET', 'POST'])
+# - @app.route('/logout')
+# - @app.route('/register', methods=['GET', 'POST'])
+# - @app.route('/admin_register', methods=['GET', 'POST'])
 
-#====================================================================
+class UserAuthFacade:
+    def __init__(self):
+        pass
+
+    def authenticate_user(self, username, password):
+        """Check if the user exists and verify password."""
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                data = line.strip().split('||')
+                if (data[0] == username or data[2] == username) and check_password_hash(data[3], password):
+                    return User(
+                        username=data[0],
+                        phone=data[1],
+                        email=data[2],
+                        password=data[3],
+                        address=data[4],
+                        profile_image=data[5],
+                        role=data[6]
+                    )
+        return None
+
+    def login_user(self, user):
+        login_user(user)
+        return user.role == "admin"  # Returns True if admin, False if regular user
+
+    def logout_user(self):
+        logout_user()
+
+    def register_user(self, username, phone, email, password, confirm_password):
+        if password != confirm_password:
+            return False, "Passwords do not match!"
+
+        # Check if username or email already exists
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                data = line.strip().split('||')
+                if data[0] == username:
+                    return False, "Username already exists!"
+                if data[2] == email:
+                    return False, "Email already registered!"
+
+        # Hash password and store user
+        hashed_password = generate_password_hash(password)
+        with open("databases/member_detail.txt", "a") as file:
+            file.write(f"{username}||{phone}||{email}||{hashed_password}||-||-||user\n")
+
+        return True, "Registration successful! Please login."
+    
+    def admin_register_user(self, username, phone, email, password, confirm_password):
+        """Register a new admin user after validation."""
+        if password != confirm_password:
+            return False, "Passwords do not match!"
+
+        # Check if username or email exists
+        with open("databases/member_detail.txt", "r") as file:
+            for line in file:
+                data = line.strip().split('||')
+                if data[0] == username:
+                    return False, "Username already exists!"
+                if data[2] == email:
+                    return False, "Email already registered!"
+
+        # Hash password and store as admin
+        hashed_password = generate_password_hash(password)
+        with open("databases/member_detail.txt", "a") as file:
+            file.write(f"{username}||{phone}||{email}||{hashed_password}||-||-||admin\n")
+
+        return True, "Admin registration successful! Please login."
+
+user_auth_facade = UserAuthFacade()  # Initialize the facade
+
+#================================================================================================================
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -189,7 +383,7 @@ def get_product_by_id(product_id):
         with open("databases/products.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 11 and part[0] == product_id:
+                if len(parts) >= 11 and parts[0] == product_id:
 
                     product = {
                         'id': parts[0],
@@ -290,17 +484,10 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        with open("databases/member_detail.txt", "r") as file:
-            for line in file:
-                data = line.strip().split('||')
-                if (data[0] == username or data[2] == username) and check_password_hash(data[3], password):
-                    user = User(data[0], data[1], data[2], data[3], data[4], data[5], data[6]) #yy
-                    login_user(user)
-                    
-                    if (data[6] == "user"):
-                        return redirect(url_for('main'))
-                    else :
-                        return redirect(url_for('admin_dashboard'))
+        user = user_auth_facade.authenticate_user(username, password)
+        if user:
+            is_admin = user_auth_facade.login_user(user)
+            return redirect(url_for('admin_dashboard' if is_admin else 'main'))
         
         flash("Invalid username or password.")
     return render_template('login.html')
@@ -308,8 +495,8 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
-    logout_user()
-    return render_template('main.html')
+    user_auth_facade.logout_user()
+    return redirect(url_for('main'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -320,33 +507,12 @@ def register():
         password = request.form['password']
         confirm = request.form['confirm']
 
-        if password != confirm:
-            flash("Passwords do not match!")
-            return render_template('register.html')
-
-        # Check if username or email already exists
-        with open("databases/member_detail.txt", "r") as file:
-            for line in file:
-                data = line.strip().split('||')
-                if data[0] == username:
-                    flash("Username already exists!")
-                    return render_template('register.html')
-                if data[2] == email:
-                    flash("Email already registered!")
-                    return render_template('register.html')
-
-        # Hash the password before storing
-        hashed_password = generate_password_hash(password)
-
-        address = "-"
-        profile_image = "-"
-        role = "user"
+        success, message = user_auth_facade.register_user(username, phone, email, password, confirm)
         
-        with open("databases/member_detail.txt", "a") as file:
-            file.write(f"{username}||{phone}||{email}||{hashed_password}||{address}||{profile_image}||{role}\n")
-        
-        flash("Registration successful! Please login.")
-        return redirect(url_for('login'))
+        flash(message)
+        if success:
+            return redirect(url_for('login'))
+
     
     return render_template('register.html')
 
@@ -360,33 +526,12 @@ def admin_register():
         password = request.form['password']
         confirm = request.form['confirm']
 
-        if password != confirm:
-            flash("Passwords do not match!")
-            return render_template('register.html')
-
-        # Check if username or email already exists
-        with open("databases/member_detail.txt", "r") as file:
-            for line in file:
-                data = line.strip().split('||')
-                if data[0] == username:
-                    flash("Username already exists!")
-                    return render_template('register.html')
-                if data[2] == email:
-                    flash("Email already registered!")
-                    return render_template('register.html')
-
-        # Hash the password before storing
-        hashed_password = generate_password_hash(password)
-
-        address = "-"
-        profile_image = "-"
-        role = "admin"
-        
-        with open("databases/member_detail.txt", "a") as file:
-            file.write(f"{username}||{phone}||{email}||{hashed_password}||{address}||{profile_image}||{role}\n")
-        
-        flash("Registration successful! Please login.")
-        return redirect(url_for('login'))
+        success, message = user_auth_facade.admin_register_user(
+            username, phone, email, password, confirm
+        )
+        flash(message)
+        if success:
+            return redirect(url_for('login'))
     
     return render_template('admin/admin_register.html')
 # yy admin register end
@@ -403,7 +548,7 @@ def user_notifications():
             for line in file:
                 parts = line.strip().split('||')
                 
-                if len(parts) >= 6 and parts[2] == current_user.id:
+                if len(parts) >= 6 and parts[2] == current_user.id and parts[5] == "False":
                     # Get product title
                     product_title = "Unknown Product"
                     try:
@@ -416,8 +561,9 @@ def user_notifications():
                     except FileNotFoundError:
                         pass
 
-                    is_seen = parts[5] == "True"
-                    if not is_seen:
+                    is_seen = parts[5]
+
+                    if is_seen == "False":
                         unseen_count += 1
                     
                     # Format notification message based on status
@@ -515,6 +661,7 @@ def products():
             for line in file:
                 parts = line.strip().split('||')
                 if len(parts) >= 11:
+                    main_photo_proxy = ProductImageProxy(parts[11]).display()
                     products.append({
                         'id': parts[0],
                         'seller': parts[1],
@@ -527,7 +674,7 @@ def products():
                         'description': parts[8].strip('"'),
                         'price': parts[9],
                         'shipping_cost':parts[10],
-                        'main_photo': parts[11]
+                        'main_photo': main_photo_proxy
                     })
     except FileNotFoundError:
         pass
@@ -659,6 +806,16 @@ def product_details(product_id):
                     shipping_cost = float(parts[10])
                 except ValueError:
                     shipping_cost = 0.0
+            
+                # Handle main photo with ProductImageProxy
+                main_photo_proxy = ProductImageProxy(parts[11]).display()
+                    
+                # Handle additional photos (apply proxy to each)
+                additional_photos_proxies = [
+                    ProductImageProxy(photo).display() 
+                    for photo in parts[12:] 
+                    if photo.strip()  # Skip empty entries
+                ] if len(parts) > 12 else []    
                 
                 product = {
                     'id': parts[0],
@@ -672,8 +829,8 @@ def product_details(product_id):
                     'description': parts[8].strip('"'),
                     'price': "{:,.2f}".format(price),
                     'shipping_cost': "{:,.2f}".format(shipping_cost),
-                    'main_photo': parts[11],
-                    'additional_photos': parts[12:] if len(parts) > 12 else [],
+                    'main_photo': main_photo_proxy,
+                    'additional_photos': additional_photos_proxies,
                     'favorites': random.randint(100, 1000)
                 }
                 break
@@ -933,12 +1090,40 @@ def sell():
                 # Save the file
                 photo.save(os.path.join(upload_dir, photo_filename))
                 additional_photo_filenames.append(photo_filename)
-    
+
+        # Prepare the data parts for the factory
+        product_parts = [
+            listing_id,                  # 0: id
+            current_user.id,             # 1: seller
+            category,                    # 2: category
+            status,                      # 3: status
+            title,                       # 4: title
+            brand,                       # 5: brand
+            model,                       # 6: model
+            year,                        # 7: year
+            description,                 # 8: description
+            price,                       # 9: price
+            shipping_cost,               # 10: shipping_cost
+            main_photo_filename          # 11: main_photo
+        ] + additional_photo_filenames   # 12+: additional_photos
+
+        # Use the ProductFactory to create a product object
+        product = ProductFactory.create_product(product_parts)
+        
+        # We can access recommendations if needed
+        recommendation_brands = product.get_recommendation_brands()
+        print(f"Recommended Brands: {recommendation_brands}")
+
+        # Write the product data to file
+        with open("databases/products.txt", "a") as file:
+            file.write('||'.join(product_parts) + '\n')
+
+        '''
         with open("databases/products.txt", "a") as file:
             file.write(f'{listing_id}||{current_user.id}||{category}||{status}||{title}||{brand}||{model}||{year}||'
                     f'"{description}"||{price}||{shipping_cost}||'
-                    f'{main_photo_filename}||{"||".join(additional_photo_filenames)}\n')
-
+                    f'{main_photo_filename}||{"||".join(additional_photo_filenames)}\n')         
+        '''
         # Flash a success message
         flash("Your listing has been submitted for review!")
         
@@ -955,37 +1140,35 @@ def term_and_condition():
 @app.route('/account')
 @login_required
 def account():
-    # 获取当前用户作为卖家收到的反馈
     feedbacks = []
     try:
         with open("databases/feedback.txt", "r") as file:
             for line in file:
                 parts = line.strip().split('||')
-                if len(parts) >= 8 and parts[3] == current_user.id:  # parts[3]是卖家用户名
-                    # 获取商品名称
-                    product_title = "未知商品"
+                if len(parts) >= 8 and parts[3] == current_user.id: 
+                    product_title = "Unknown Product"
                     try:
                         with open("databases/products.txt", "r") as prod_file:
                             for prod_line in prod_file:
                                 prod_parts = prod_line.strip().split('||')
-                                if len(prod_parts) >= 5 and prod_parts[0] == parts[2]:  # 商品ID匹配
-                                    product_title = prod_parts[4]  # 商品标题
+                                if len(prod_parts) >= 5 and prod_parts[0] == parts[2]:  
+                                    product_title = prod_parts[4]  
                                     break
                     except FileNotFoundError:
                         pass
                     
                     feedbacks.append({
-                        'buyer_username': parts[4],  # 买家用户名
+                        'buyer_username': parts[4], 
                         'product_title': product_title,
-                        'rating': parts[5],  # 添加评分
-                        'comment': parts[6],  # 评价内容
-                        'timestamp': parts[7]  # 添加时间戳
+                        'rating': parts[5],  
+                        'comment': parts[6],  
+                        'timestamp': parts[7]  
                     })
     except FileNotFoundError:
-        print("Feedback file not found")  # 调试信息
+        print("Feedback file not found")  
         pass
     
-    print(f"Found {len(feedbacks)} feedbacks for user {current_user.id}")  # 调试信息
+    print(f"Found {len(feedbacks)} feedbacks for user {current_user.id}")  
     
     return render_template('account/account.html',
                          active_page='profile',
@@ -1020,6 +1203,8 @@ def account_profile():
                 if len(parts) >= 11:
                     product_id = parts[0]
 
+                    main_photo_proxy = ProductImageProxy(parts[11]).display()
+                    
                     product = {
                         'id': parts[0],
                         'seller': parts[1],
@@ -1032,7 +1217,7 @@ def account_profile():
                         'description': parts[8].strip('"'),
                         'price': parts[9],
                         'shipping_method': parts[10],
-                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg"
+                        'main_photo': main_photo_proxy
                     }
 
                     if parts[1] == current_user.id:
@@ -1093,62 +1278,6 @@ def account_profile():
                          feedbacks=feedbacks,  # Add this line
                          feedback_count=len(feedbacks))  # Add this line
 
-'''
-@app.route('/account/posts')
-@login_required
-def account_posts():
-    # Get the active tab from query parameters, default to 'posted'
-    active_tab = request.args.get('tab', 'posted')
-    
-    # Get user's posted products
-    posted_products = []
-    pending_products = []
-    
-    try:
-        with open("databases/products.txt", "r") as file:
-            for line in file:
-                parts = line.strip().split('||')
-                if len(parts) >= 15 and parts[1] == current_user.id:
-                    product = {
-                        'id': parts[0],
-                        'seller': parts[1],
-                        'category': parts[2],
-                        'status': parts[3],
-                        'title': parts[4],
-                        'brand': parts[5],
-                        'model': parts[6],
-                        'year': parts[7],
-                        'description': parts[8].strip('"'),
-                        'price': parts[9],
-                        'shipping_method': parts[10],
-                        'main_photo': f"/static/uploads/product_images/{parts[13]}" if parts[13] else "/static/images/default-product.jpg"
-                    }
-                    
-                    if parts[3] == 'approved':
-                        posted_products.append(product)
-                    elif parts[3] == 'pending':
-                        pending_products.append(product)
-    except FileNotFoundError:
-        pass
-    
-    # Sort products by ID in reverse order (newest first)
-    posted_products.sort(key=lambda x: int(x['id']), reverse=True)
-    pending_products.sort(key=lambda x: int(x['id']), reverse=True)
-
-    posted_count = len(posted_products)
-    pending_count = len(pending_products)
-    
-    return render_template('account/account.html', 
-                          active_page='posts',
-                          active_tab=active_tab,
-                          posted_products=posted_products,
-                          pending_products=pending_products,
-                          posted_count=posted_count,
-                          pending_count=pending_count)
-
-                          
-'''
-
 # Define the context to hold product lists
 class ProductContext:
     def __init__(self):
@@ -1196,6 +1325,9 @@ def account_listings():
             for line in file:
                 parts = line.strip().split('||')
                 if len(parts) >= 11 and parts[1] == current_user.id:
+                    
+                    main_photo_proxy = ProductImageProxy(parts[11]).display()
+
                     product = {
                         'id': parts[0],
                         'seller': parts[1],
@@ -1208,7 +1340,7 @@ def account_listings():
                         'description': parts[8].strip('"'),
                         'price': parts[9],
                         'shipping_cost': parts[10],
-                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg"
+                        'main_photo': main_photo_proxy
                     }
                     # Select and execute the appropriate strategy
                     strategy = ProductStrategyFactory.get_strategy(product['status'])
@@ -1307,6 +1439,14 @@ def account_sold():
                     
                     if product_id in order_record:
                         order_info = order_record[product_id]
+
+                        main_photo_proxy = ProductImageProxy(parts[11]).display()
+
+                        additional_photos_proxies = [
+                            ProductImageProxy(photo).display() 
+                            for photo in parts[12:] 
+                            if photo.strip()  # Skip empty entries
+                        ] if len(parts) > 12 else []
                         
                         product = {
                             'id': parts[0],
@@ -1320,8 +1460,8 @@ def account_sold():
                             'description': parts[8].strip('"'),
                             'price': parts[9],
                             'shipping_cost': parts[10],
-                            'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg",
-                            'additional_photos': parts[12:] if len(parts) > 12 else [],
+                            'main_photo': main_photo_proxy,
+                            'additional_photos': additional_photos_proxies,
 
                             # Add order information
                             'order_id': order_info['order_id'],
@@ -1371,6 +1511,9 @@ def account_favorites():
                     
                     # Only include products that user has favorited
                     if product_id in user_favorites:
+                        
+                        main_photo_proxy = ProductImageProxy(parts[11]).display()
+
                         product = {
                             'id': parts[0],
                             'seller': parts[1],
@@ -1383,7 +1526,7 @@ def account_favorites():
                             'description': parts[8].strip('"'),
                             'price': parts[9],
                             'shipping_cost': parts[10],
-                            'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg"
+                            'main_photo': main_photo_proxy
                         }
                         favorite_products.append(product)
     except FileNotFoundError:
@@ -1478,6 +1621,8 @@ def account_orders():
                     if product_id in user_orders:
                         order_info = user_orders[product_id]
                         
+                        main_photo_proxy = ProductImageProxy(parts[11]).display()
+
                         order_product = {
                             'id': parts[0],
                             'seller': parts[1],
@@ -1489,7 +1634,7 @@ def account_orders():
                             'description': parts[8].strip('"'),
                             'price': parts[9],
                             'shipping_cost': parts[10],
-                            'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg",
+                            'main_photo': main_photo_proxy,
                             
                             # Add order information
                             'order_id': order_info['order_id'],
@@ -1538,6 +1683,15 @@ def product_details_modal(product_id):
             for line in file:
                 parts = line.strip().split('||')
                 if len(parts) >= 11 and parts[0] == product_id:
+
+                    main_photo_proxy = ProductImageProxy(parts[11]).display()
+
+                    additional_photos_proxies = [
+                        ProductImageProxy(photo).display() 
+                        for photo in parts[12:] 
+                        if photo.strip()  # Skip empty entries
+                    ] if len(parts) > 12 else []
+                    
                     product = {
                         'id': parts[0],
                         'seller': parts[1],
@@ -1550,8 +1704,8 @@ def product_details_modal(product_id):
                         'description': parts[8].strip('"'),
                         'price': float(parts[9]),
                         'shipping_cost': parts[10],
-                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg",
-                        'additional_photos': parts[12:] if len(parts) > 12 else [],
+                        'main_photo': main_photo_proxy,
+                        'additional_photos': additional_photos_proxies,
                     }
                     break
     except FileNotFoundError:
@@ -1803,10 +1957,8 @@ def submit_feedback(order_id):
         flash("Please provide both rating and feedback", "error")
         return redirect(url_for('account_orders', tab='completed'))
     
-    # 确保数据目录存在
     os.makedirs("databases", exist_ok=True)
     
-    # 获取订单详情
     order_info = None
     try:
         with open("databases/orders.txt", "r") as file:
@@ -1844,7 +1996,6 @@ def submit_feedback(order_id):
         flash("Product seller not found", "error")
         return redirect(url_for('account_orders', tab='completed'))
     
-    # 获取下一个反馈ID
     feedback_id = 1
     try:
         with open("databases/feedback.txt", "r") as file:
@@ -1858,8 +2009,7 @@ def submit_feedback(order_id):
     except FileNotFoundError:
         pass
     
-    # 保存反馈数据
-    # 格式：feedback_id||order_id||product_id||seller_username||buyer_username||rating||comment||timestamp
+    # format：feedback_id||order_id||product_id||seller_username||buyer_username||rating||comment||timestamp
     feedback_data = [
         str(feedback_id),
         order_info['order_id'],
@@ -1875,10 +2025,10 @@ def submit_feedback(order_id):
         with open("databases/feedback.txt", "a") as file:
             file.write('||'.join(feedback_data) + '\n')
         flash("Thank you for your feedback!", "success")
-        print(f"Feedback saved: {feedback_data}")  # 调试信息
+        print(f"Feedback saved: {feedback_data}")  
     except Exception as e:
         flash(f"Error submitting feedback: {str(e)}", "error")
-        print(f"Error saving feedback: {e}")  # 调试信息
+        print(f"Error saving feedback: {e}") 
     
     return redirect(url_for('account_orders', tab='completed'))
 
@@ -1902,7 +2052,6 @@ def debug_feedback():
     
     return f"<pre>{feedbacks}</pre>"
 
-# 5. 修复获取卖家反馈的API
 @app.route('/get_seller_feedback')
 def get_seller_feedback():
     seller = request.args.get('seller')
@@ -2318,6 +2467,14 @@ def admin_view_products():
             if len(parts) < 13:
                 continue  # Skip malformed lines
 
+            main_photo_proxy = ProductImageProxy(parts[11]).display()
+                
+            additional_photos_proxies = [
+                ProductImageProxy(photo).display() 
+                for photo in parts[12:] 
+                if photo.strip()  # Skip empty entries
+            ] if len(parts) > 12 else []    
+
             product = {
                 'product_id': parts[0],
                 'seller_username': parts[1],
@@ -2330,8 +2487,8 @@ def admin_view_products():
                 'description': parts[8],
                 'price': parts[9],
                 'shipping_cost': parts[10],
-                'main_photo_filename': parts[11],
-                'additional_photo_filenames': parts[12]
+                'main_photo_filename': main_photo_proxy,
+                'additional_photo_filenames': additional_photos_proxies
             }
             
 
@@ -2372,6 +2529,7 @@ def product_details_partial(product_id):
         for line in file:
             parts = line.strip().split('||')
             if parts[0] == product_id:
+                main_photo_proxy = ProductImageProxy(parts[11]).display()
                 product = {
                     'id': parts[0],
                     'title': parts[4],
@@ -2381,7 +2539,7 @@ def product_details_partial(product_id):
                     'description': parts[8].strip('"'),
                     'price': float(parts[9]) if parts[9].replace('.', '', 1).isdigit() else 0,
                     'shipping_cost': float(parts[10]) if parts[10].replace('.', '', 1).isdigit() else 0,
-                    'main_photo': parts[11],
+                    'main_photo': main_photo_proxy,
                     'category': parts[2],
                     'status': parts[3],
                     'seller': parts[1]
@@ -2412,6 +2570,15 @@ def admin_product_upload_approval():
                 parts = line.strip().split('||')
                 if len(parts) >= 12:
                     status = parts[3].lower()
+                    
+                    main_photo_proxy = ProductImageProxy(parts[11]).display()
+
+                    additional_photos_proxies = [
+                        ProductImageProxy(photo).display() 
+                        for photo in parts[12:] 
+                        if photo.strip()  # Skip empty entries
+                    ] if len(parts) > 12 else []   
+                    
                     product = {
                         'id': parts[0],
                         'seller': parts[1],
@@ -2424,8 +2591,8 @@ def admin_product_upload_approval():
                         'description': parts[8].strip('"'),
                         'price': parts[9],
                         'shipping_cost': parts[10],
-                        'main_photo': f"/static/uploads/product_images/{parts[11]}" if parts[11] else "/static/images/default-product.jpg",
-                        'additional_photos': parts[12].split(',') if len(parts) > 12 and parts[12] else []
+                        'main_photo': main_photo_proxy,
+                        'additional_photos': additional_photos_proxies
                     }
 
                     if status == 'pending':
@@ -2485,7 +2652,7 @@ def update_product_status():
         if product_updated:
             with open("databases/products.txt", "w") as file:
                 file.writelines(updated_lines)
-            
+
             # NOTIFY ALL OBSERVERS
             product_status_subject.notify(product_id, new_status, seller_id)
             
@@ -2494,20 +2661,10 @@ def update_product_status():
             return jsonify({'success': False, 'message': 'Product not found'}), 404
 
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500 
+
   
 # yy update_product_status end
-
-
-# yy admin manage feedback start
-@app.route('/admin/manage_feedback')
-@login_required
-def manage_feedback():
-    print('manage_feedback')
-
-    return render_template('admin/admin_page.html',
-                            active_page='manage_feedback')
-# yy admin manage feedback end
 
 # yy admin dashboard start
 @app.route('/admin/admin_dashboard')
@@ -2704,235 +2861,6 @@ def admin_dashboard():
                          metrics=metrics,
                          feedback_stats=feedback_stats,
                          current_view=view_type)
-
-'''
-@app.route('/admin/admin_dashboard')
-@login_required
-def admin_dashboard():
-
-    # Initialize order count containers
-    order_counts = {
-        "monthly": [0] * 12,
-        "weekly": [0] * 53,
-        "yearly": {}
-    }
-
-    status_counts = {
-        "pending": 0,
-        "approved": 0,
-        "rejected": 0,
-        "sold": 0
-    }
-
-    metrics = {
-        "profit": 0,          # count sold products
-        "customer": 0,        # count users with role 'user'
-        "orders": 0,          # count all orders
-        "request": 0          # count pending products
-    }
-
-    orders_file = 'databases/orders.txt'
-    products_file = 'databases/products.txt'
-    members_file = 'databases/member_detail.txt'
-    order_details = []
-    category_counts = {}
-    products_dict = {}
-    user_details = []
-
-    if os.path.exists(members_file):
-        with open(members_file, 'r') as f:
-            for line in f:
-                parts = line.strip().split("||")
-                if len(parts) < 7:
-                    continue  # Skip invalid lines
-                username = parts[0]
-                phone = parts[1]
-                email = parts[2]
-                role = parts[6]
-                user_details.append({
-                    "username": username,
-                    "phone": phone,
-                    "email": email,
-                    "role": role
-                })
-                if role == 'user':
-                    metrics["customer"] += 1
-
-    if os.path.exists(products_file):
-        with open(products_file, 'r') as f:
-            for line in f:
-                parts = line.strip().split("||")
-                if len(parts) < 5:  # Need at least product_id, seller, category, status, title
-                    continue
-                
-                product_id = parts[0].strip()
-                category = parts[2].strip().lower()
-                status = parts[3].strip().lower()
-                title = parts[4].strip()
-                
-                # Store product info in dictionary
-                products_dict[product_id] = {
-                    'title': title,
-                    'category': category,
-                    'status': status
-                }
-                
-                # Only count approved or sold products for pie chart
-                #if status in ['approved', 'sold']:
-                if category in ['smartphone', 'laptop', 'tablet', 'camera', 'audio']:
-                    category_counts[category] = category_counts.get(category, 0) + 1
-
-                # Count all statuses for doughnut chart
-                if status in status_counts:
-                    status_counts[status] += 1
-
-                # Count all statuses to top card
-                if status == 'pending':
-                    metrics["request"] += 1
-
-    if os.path.exists(orders_file):
-        with open(orders_file, 'r') as f:
-            # metrics["orders"] = sum(1 for line in f if line.strip())
-            for line in f:
-                parts = line.strip().split("||")
-                if len(parts) < 8:
-                    continue  # Skip invalid lines
-                metrics["orders"] += 1  # Count all orders
-                
-                # Check if order is completed, sum the payment amount
-                status = parts[7].lower().strip()
-                if "complete" in status:
-                    try:
-                        payment_amount = float(parts[5].strip())
-                        metrics["profit"] += payment_amount
-                    except (ValueError, IndexError):
-                        continue
-                try:
-                    buyer = parts[1]
-                    product_id  = parts[2]
-                    payment_method = parts[4]
-                    order_time_str = parts[3]
-                    status = parts[7].lower() if len(parts) > 7 else "pending"  # Standardize to lowercase
-                    if "complete" in status:
-                        status = "completed"
-                    elif "ship" in status:
-                        status = "shipping"
-                    
-                    # Get product title from products dictionary
-                    product_title = products_dict.get(product_id, {}).get('title', 'Unknown Product')
-
-                except IndexError:
-                    continue  # Skip lines that don't have enough fields
-                try:
-                    order_time = datetime.strptime(parts[3], "%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    continue
-
-                # Monthly
-                order_counts["monthly"][order_time.month - 1] += 1
-
-                # Weekly
-                week_num = order_time.isocalendar()[1]
-                if 1 <= week_num <= 53:
-                    order_counts["weekly"][week_num - 1] += 1
-
-                # Yearly
-                year = order_time.year
-                order_counts["yearly"][year] = order_counts["yearly"].get(year, 0) + 1
-
-                # Append full order details
-                order_details.append({
-                    "buyer": buyer,
-                    "product_id ": product_id,
-                    "product_title": product_title,
-                    "payment_method": payment_method,
-                    "status": status
-                })
-
-    # Prepare category data for pie chart
-    category_labels = []
-    category_data = []
-    colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6']
-    
-    # Status data for doughnut chart
-    status_labels = ['Pending', 'Approved', 'Rejected', 'Sold']
-    status_data = [
-        status_counts['pending'],
-        status_counts['approved'],
-        status_counts['rejected'],
-        status_counts['sold']
-    ]
-    status_colors = ['#f59e0b', '#10b981', '#ef4444', '#3b82f6']
-    
-    for i, (category, count) in enumerate(sorted(category_counts.items())):
-        category_labels.append(category.capitalize())
-        category_data.append(count)
-        # If we have more categories than colors, cycle through colors
-        if i >= len(colors):
-            colors.append(colors[i % len(colors)])
-
-    # Prepare data for chart
-    month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    order_chart_data = {
-        "monthly": [{"label": m, "collections": c} for m, c in zip(month_labels, order_counts["monthly"])],
-        "weekly": [{"label": f"Week {i+1}", "collections": c} for i, c in enumerate(order_counts["weekly"])],
-        "yearly": [{"label": str(y), "collections": c} for y, c in sorted(order_counts["yearly"].items())]
-    }
-
-    product_chart_data = {
-        "categories": {
-            "labels": category_labels,
-            "data": category_data,
-            "colors": colors
-        },
-        "status": {
-            "labels": status_labels,
-            "data": status_data,
-            "colors": status_colors
-        }
-
-    }
-
-    feedback_data = []
-    
-    try:
-        # Read feedback data from text file
-        with open('databases/feedback.txt', 'r') as file:
-            # Skip header line if exists
-            lines = file.readlines()
-            
-            for line in lines:
-                # Split by || and strip whitespace
-                parts = [part.strip() for part in line.split('||')]
-                
-                if len(parts) >= 8:  # Ensure we have all fields
-                    feedback_data.append({
-                        'feedback_id': parts[0],
-                        'order_id': parts[1],
-                        'product_id': parts[2],
-                        'seller_username': parts[3],
-                        'buyer_username': parts[4],
-                        'rating': parts[5],
-                        'feedback_text': parts[6],
-                        'timestamp': parts[7]
-                    })
-    
-    except FileNotFoundError:
-        flash('Feedback data file not found', 'error')
-    except Exception as e:
-        flash(f'Error reading feedback data: {str(e)}', 'error')
-
-    return render_template('admin/admin_page.html',
-                           active_page='admin_dashboard',
-                           order_chart_data=order_chart_data,
-                           order_details=order_details,
-                           product_chart_data=product_chart_data,
-                           user_details=user_details,
-                           metrics=metrics,
-                           feedback_data=feedback_data)
-# yy admin dashboard end
-'''
 
 #yy admin profile start
 @app.route('/admin/admin_profile/<username>', methods=['GET', 'POST'])

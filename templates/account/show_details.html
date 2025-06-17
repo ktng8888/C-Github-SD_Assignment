@@ -339,7 +339,7 @@
             if (productData.additional_photos && Array.isArray(productData.additional_photos)) {
                 productData.additional_photos.forEach(photo => {
                     if (photo && photo.trim() !== '') {
-                        allPhotos.push('/static/uploads/product_images/' + photo);
+                        allPhotos.push(photo);
                     }
                 });
             }

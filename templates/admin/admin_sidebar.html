@@ -33,12 +33,6 @@
                 <span>Order Management</span>
             </a>
         </li>
-        <!-- <li class="sidebar-menu-item">
-            <a href="{{ url_for('manage_feedback') }}" {% if active_page=='manage_feedback' %}class="active" {% endif %}>
-                <i class="fa-solid fa-star-half-stroke"></i>
-                <span>Manage Feedback</span>
-            </a>
-        </li> -->
         
         <li class="sidebar-menu-item">
             <a href="{{ url_for('admin_profile', username=current_user.username) }}" {% if active_page=='admin_profile' %}class="active" {% endif %}>
@@ -47,46 +41,5 @@
             </a>
         </li>
         
-
-
-
-
-        <!-- <li class="sidebar-menu-item">
-            <a href="{{ url_for('account_profile') }}" {% if active_page=='profile' %}class="active" {% endif %}>
-                <i class="fas fa-user"></i>
-                <span>admin - My Profile</span>
-            </a>
-        </li> -->
-        <!-- <li class="sidebar-menu-item">
-            <a href="#">
-                <i class="fas fa-box"></i>
-                <span>My Products</span>
-            </a>
-            <ul class="sidebar-submenu" {% if active_page in ['listings', 'sold' ] %}style="display: block;" {% endif
-                %}>
-                <li><a href="{{ url_for('account_listings') }}" {% if active_page=='listings' %}class="active" {% endif
-                        %}>My Listings</a></li>
-                <li><a href="{{ url_for('account_sold') }}" {% if active_page=='sold' %}class="active" {% endif %}>My
-                        Sold Items</a></li>
-            </ul>
-        </li> -->
-        <!-- <li class="sidebar-menu-item">
-            <a href="{{ url_for('account_favorites') }}" {% if active_page=='favorites' %}class="active" {% endif %}>
-                <i class="fas fa-heart"></i>
-                <span>Favorites</span>
-            </a>
-        </li> -->
-        <!-- <li class="sidebar-menu-item">
-            <a href="{{ url_for('account_orders') }}" {% if active_page=='orders' %}class="active" {% endif %}>
-                <i class="fas fa-shopping-bag"></i>
-                <span>My Orders</span>
-            </a>
-        </li> -->
-        <!-- <li class="sidebar-menu-item">
-            <a href="{{ url_for('account_settings') }}" {% if active_page=='settings' %}class="active" {% endif %}>
-                <i class="fas fa-cog"></i>
-                <span>Account Settings</span>
-            </a>
-        </li> -->
     </ul>
 </div>

@@ -1,0 +1,17 @@
+member_detail.txt 
+username || phone || email || password || address || profile_image || role (user, admin)
+
+products.txt
+product_id || seller_username || category || status (pending, approved, rejected, sold) || title || brand || model || year || description || price || shipping_cost || main_photo_filename || additional_photo_filenames 
+
+orders.txt
+order_id || buyer_username || product_id || order_time || payment_method || payment_amount || delivery_address || status(shipping, completed) || delivered_date 
+
+favorites.txt
+favorite_id || user_username || product_id || time
+
+feedback.txt
+feedback_id || order_id || product_id || seller_username || buyer_username || rating || feedback_text || timestamp
+
+notification.txt
+notification_id || product_id || seller_id || new_status || timestamp || is_seen (True, False)

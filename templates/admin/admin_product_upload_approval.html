@@ -6,13 +6,17 @@
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-    <div class="flask-messages">
+    <div class="flash-messages">
       {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">
-          {{ message }}
-        </div>
+        <div class="alert alert-{{ category }}" onclick="this.remove()">{{ message }}</div>
       {% endfor %}
     </div>
+    <script>
+      // Auto-remove flash messages after 5 seconds
+      setTimeout(() => {
+        document.querySelectorAll('.flash-messages .alert').forEach(el => el.remove());
+      }, 5000);
+    </script>
   {% endif %}
 {% endwith %}
 
@@ -389,6 +393,40 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
     }
+
+.flash-messages {
+    position: fixed;
+    top: 20px;
+    right: 500px;
+    z-index: 1000;
+    max-width: 400px;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    animation: slideIn 0.3s ease-out;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
 </style>
 
 <script>
@@ -457,7 +495,7 @@
                 //window.location.reload();  // reload page to reflect changes
 
                 window.parent.closeProductModal();
-                window.parent.location.reload();
+                //window.parent.location.reload();
                 window.parent.location.href = '/admin/admin_product_upload_approval?tab=approved';
 
                 } else {
