@@ -1,0 +1,4 @@
+1||KeanTiong||13||2025-06-18 22:12:48||online_banking||1609.0||2934, Jalan Teluk Ipil, 14300 Nibong Tebal, Penang, Malaysia||shipping||-
+2||Tzenn||37||2025-06-18 22:14:37||credit_card||3009.0||175, Kampung Titi Semang, Kampung Batu Lapan, Sik, Kedah 08200, Malaysia||completed||2025-06-18 22:14:48
+3||William||23||2025-06-18 22:18:54||online_banking||676.0||No. 25, Jalan SS 15/4B, 47500 Subang Jaya,  Selangor Darul Ehsan,  Malaysia.||shipping||-
+4||William||33||2025-06-18 22:20:13||online_banking||3209.0||No. 25, Jalan SS 15/4B, 47500 Subang Jaya,  Selangor Darul Ehsan,  Malaysia.||completed||2025-06-18 22:20:22

@@ -430,7 +430,7 @@ def main():
                     break
                     
                 parts = line.strip().split('||')
-                if len(parts) >= 11:
+                if len(parts) >= 11 : 
                     # Calculate discount and original price for display purposes
                     # For demonstration, we'll set random discounts between 10-25%
                     import random
@@ -459,8 +459,9 @@ def main():
                         'posted_time': random.choice(["Posted 1 day ago", "Posted 2 days ago", "Posted 3 days ago", "Posted 1 week ago"])
                     }
                     
-                    featured_products.append(product)
-                    count += 1
+                    if product['status'] == "approved":
+                        featured_products.append(product)
+                        count += 1
     except FileNotFoundError:
         # If the file doesn't exist, we'll just show empty featured products
         pass
@@ -695,7 +696,7 @@ def products():
         product['is_favorite'] = product['id'] in user_favorites
 
     # Show only approved products
-    # products = [p for p in products if p['status'] == 'approved']
+    products = [p for p in products if p['status'] == 'approved']
 
     # Filter by category
     selected_category = request.args.get('category')
@@ -1791,6 +1792,7 @@ def account_settings():
         # Username and email remain unchanged
         username = current_user.username
         email = current_user.email
+        role = current_user.role
         
         # Handle profile image upload
         profile_image_filename = current_user.profile_image  # Keep existing image by default
@@ -1848,7 +1850,7 @@ def account_settings():
                     data = line.strip().split('||')
                     if len(data) >= 6 and data[0] == current_user.id:
                         # Update current user's record - keep original username and email
-                        updated_line = f"{username}||{phone}||{email}||{data[3]}||{address}||{profile_image_filename}\n"
+                        updated_line = f"{username}||{phone}||{email}||{data[3]}||{address}||{profile_image_filename}||{role}\n"
                         updated_lines.append(updated_line)
                         user_found = True
                     else:
@@ -2777,6 +2779,7 @@ def admin_dashboard():
                         'status': parts[7].lower(),
                         'delivered_date': parts[8] if len(parts) > 8 else None
                     })
+
     except FileNotFoundError:
         flash('Order data file not found', 'error')
 
@@ -2853,14 +2856,14 @@ def admin_dashboard():
     }
 
     return render_template('admin/admin_page.html',
-                         active_page='admin_dashboard',
-                         order_chart_data=order_chart_data,
-                         product_chart_data=product_chart_data,
-                         user_details=user_details,
-                         order_details=raw_orders[:10],  # Show recent 10 orders
-                         metrics=metrics,
-                         feedback_stats=feedback_stats,
-                         current_view=view_type)
+                        active_page='admin_dashboard',
+                        order_chart_data=order_chart_data,
+                        product_chart_data=product_chart_data,
+                        user_details=user_details,
+                        order_details = raw_orders,
+                        metrics=metrics,
+                        feedback_data=feedback_data,
+                        current_view=view_type)
 
 #yy admin profile start
 @app.route('/admin/admin_profile/<username>', methods=['GET', 'POST'])

@@ -565,6 +565,14 @@
                 </div>     
             </div>
 
+    <script id="user-data" type="application/json">
+        {{ user_details  | tojson }}
+    </script>
+
+    <script id="order-data" type="application/json">
+        {{ order_details | tojson }}
+    </script>
+   
     <script>
         // Order Chart Data with Strategy Pattern Implementation
         const orderChartData = JSON.parse('{{ order_chart_data | tojson | safe }}');
@@ -720,9 +728,11 @@
 
         // Populate tables
         function populateTables() {
-            // User table
-            const userData = JSON.parse('{{ user_details | tojson | safe }}');
+            // User table (keep as is)
+            const userDataScript = document.getElementById('user-data');
+            const userData = JSON.parse(userDataScript.textContent);
             const userTableBody = document.getElementById('userTableBody');
+            
             userData.forEach(user => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -734,39 +744,44 @@
                 userTableBody.appendChild(row);
             });
 
-            // Order table
-            const orderData = JSON.parse('{{ order_details | tojson | safe }}');
-            const orderTableBody = document.getElementById('orderTableBody');
+            // Order table - NEW SAFE METHOD
+            try {
+                const orderDataScript = document.getElementById('order-data');
+                const orderData = JSON.parse(orderDataScript.textContent);
+                
+                const orderTableBody = document.getElementById('orderTableBody');
+                
+                orderData.forEach(order => {
+                    const row = document.createElement('tr');
+                    
+                    let badgeClass = '';
+                    switch (order.status.toLowerCase()) {
+                        case 'completed':
+                        case 'complete':
+                            badgeClass = 'completed-badge';
+                            break;
+                        case 'shipping':
+                            badgeClass = 'shipping-badge';
+                            break;
+                        default:
+                            badgeClass = 'pending-badge';
+                    }
 
-            orderData.forEach(order => {
-                const row = document.createElement('tr');
-                const initials = order.buyer.split(' ').map(n => n[0]).join('');
-
-                // Determine badge class based on status
-                let badgeClass = '';
-                switch (order.status.toLowerCase()) {
-                    case 'completed':
-                        badgeClass = 'completed-badge';
-                        break;
-                    case 'shipping':
-                        badgeClass = 'shipping-badge';
-                        break;
-                    default:
-                        badgeClass = 'pending-badge';
-                }
-
-                row.innerHTML = `
-                    <td>
-                        <div class="buyer-cell">
-                            <span>${order.buyer}</span>
-                        </div>
-                    </td>
-                    <td>${order.product_title}</td>
-                    <td>${order.payment_method}</td>
-                    <td><span class="badge ${badgeClass}">${order.status}</span></td>
-                `;
-                orderTableBody.appendChild(row);
-            });
+                    row.innerHTML = `
+                        <td>
+                            <div class="buyer-cell">
+                                <span>${order.buyer}</span>
+                            </div>
+                        </td>
+                        <td>${order.product_title}</td>
+                        <td>${order.payment_method}</td>
+                        <td><span class="badge ${badgeClass}">${order.status}</span></td>
+                    `;
+                    orderTableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error:", error);
+            }
         }
 
         // Feedback chart animation
@@ -822,7 +837,7 @@
             populateTables();
 
             // Get feedback data from the backend
-            const feedbackData = JSON.parse('{{ feedback_stats | tojson | safe }}');
+            const feedbackData = JSON.parse('{{ feedback_data | tojson | safe }}');
             animateFeedbackStats(feedbackData);
         });
     </script>

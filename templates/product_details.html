@@ -84,7 +84,7 @@
                 </div>
               {% else %}
                 <div class="ratings-stars">☆☆☆☆☆</div>
-                <div class="ratings-count">No ratings yet</div>
+                <div class="ratings-count">(No ratings yet)</div>
               {% endif %}
             </div>
 
@@ -104,7 +104,7 @@
                       {% set avg_rating = total_rating / seller_feedbacks|length %}
                       ★ {{ "%.1f"|format(avg_rating) }} ({{ seller_feedbacks|length }})
                     {% else %}
-                      No ratings yet
+                      (No ratings yet)
                     {% endif %}
                   </span>
                 </div>

@@ -152,7 +152,7 @@
       width: 100%;
       height: 100%;
       overflow: auto;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgb(0, 0, 0, 0.5);
       animation: fadeIn 0.3s ease;
   }
 
@@ -176,7 +176,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 20px 25px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
       color: white;
       border-radius: 12px 12px 0 0;
       flex-shrink: 0;
@@ -290,9 +290,14 @@
       background-color: #f9fafb;
       border-radius: 0 0 12px 12px;
   }
+  
+  .notification-modal-footer {
+      padding: 15px;
+      border-top: 1px solid #eee;
+  }
 
-  .view-listings-button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  .notification-action-button {
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
       color: white;
       border: none;
       padding: 12px 24px;
@@ -306,9 +311,9 @@
       text-decoration: none;
   }
 
-  .view-listings-button:hover {
+  .notification-action-button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
   }
 
   .empty-notifications {

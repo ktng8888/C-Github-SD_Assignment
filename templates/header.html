@@ -55,10 +55,12 @@
           </div>
           
           <div class="notification-modal-footer">
-              <button class="view-listings-button" onclick="goToListings()">
+            <!--
+                <button class="view-listings-button" onclick="goToListings()">
                   <i class="fas fa-list"></i>
                   View My Listings
               </button>
+            -->
           </div>
       </div>
   </div>
@@ -108,6 +110,7 @@
     function openNotificationModal() {
         const modal = document.getElementById('notificationModal');
         const notificationList = document.getElementById('notificationList');
+            const modalFooter = document.querySelector('.notification-modal-footer');
         
         // Clear existing content
         notificationList.innerHTML = '';
@@ -135,6 +138,15 @@
                 `;
                 notificationList.appendChild(li);
             });
+            
+            // Show View Listings button when there are notifications
+            modalFooter.innerHTML = `
+            <button class="notification-action-button" onclick="goToListings()">
+                <i class="fas fa-list"></i>
+                View My Listings
+            </button>
+            `;
+
         } else {
             // Show empty state
             notificationList.innerHTML = `
@@ -143,6 +155,13 @@
                     <h3>No notifications</h3>
                     <p>You're all caught up!</p>
                 </div>
+            `;
+
+            // Show OK button when no notifications
+            modalFooter.innerHTML = `
+                <button class="notification-action-button" onclick="closeNotificationModal()">
+                    OK
+                </button>
             `;
         }
         
