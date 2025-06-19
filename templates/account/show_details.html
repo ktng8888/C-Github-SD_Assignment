@@ -286,6 +286,12 @@
                     <span class="info-value">{{ product.buyer_username }}</span>
                 </div>
                 {% endif %}
+                {% if context.is_buyer %}
+                <div class="info-row">
+                    <span class="info-label">Seller:</span>
+                    <span class="info-value">{{ product.seller }}</span>
+                </div>
+                {% endif %}
                 <div class="info-row">
                     <span class="info-label">Order Date:</span>
                     <span class="info-value">{{ product.order_date }}</span>
