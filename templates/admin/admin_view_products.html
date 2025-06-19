@@ -370,11 +370,11 @@
                     <label for="categoryFilter">Filter: </label>
                     <select name="category" id="categoryFilter" onchange="this.form.submit()">
                         <option value="">Category</option>
-                        <option value="smartphones" {% if request.args.get('category')=='smartphones' %}selected{% endif %}>Smartphones</option>
-                        <option value="laptops" {% if request.args.get('category')=='laptops' %}selected{% endif %}>Laptops</option>
-                        <option value="tablets" {% if request.args.get('category')=='tablets' %}selected{% endif %}>Tablets</option>
-                        <option value="cameras" {% if request.args.get('category')=='cameras' %}selected{% endif %}>Cameras</option>
-                        <option value="audio" {% if request.args.get('category')=='audio' %}selected{% endif %}>Audio</option>
+                        <option value="Smartphone" {% if request.args.get('category')=='Smartphone' %}selected{% endif %}>Smartphones</option>
+                        <option value="Laptop" {% if request.args.get('category')=='Laptop' %}selected{% endif %}>Laptops</option>
+                        <option value="Tablet" {% if request.args.get('category')=='Tablet' %}selected{% endif %}>Tablets</option>
+                        <option value="Camera" {% if request.args.get('category')=='Camera' %}selected{% endif %}>Cameras</option>
+                        <option value="Audio" {% if request.args.get('category')=='Audio' %}selected{% endif %}>Audio</option>
                     </select>
                     <select name="status" id="statusFilter" onchange="this.form.submit()">
                         <option value="">Status</option>
