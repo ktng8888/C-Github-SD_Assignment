@@ -10,7 +10,7 @@ from collections import defaultdict #yy
 
 #================================================================================================================
 # Strategy Pattern
-# Usage : Admin Dashboard Order Bar Chart
+# Usage : Admin Dashboard Order Bar Chart (Display bar chart based on different display selection)
 # Flask Route : @app.route('/admin/admin_dashboard')
 class OrderDisplayStrategy(ABC):
     @abstractmethod
@@ -654,8 +654,9 @@ def mark_notifications_seen():
 
 
 @app.route('/products')
-@login_required
+
 def products():
+    current_user.id = current_user.id if current_user.is_authenticated else '0'
     products = []
     try:
         with open("databases/products.txt", "r") as file:
@@ -783,16 +784,19 @@ def toggle_favorite():
         return jsonify({'success': False, 'message': 'Error updating favorites'})
 
 @app.route('/product/<product_id>')
-@login_required
-def product_details(product_id):
-    user_data = {
-        'username': current_user.username,
-        'email': current_user.email,
-        'phone': current_user.phone if current_user.phone != '-' else '',
-        'address': current_user.address if current_user.address != '-' else '',
-        'profile_image': current_user.profile_image if current_user.profile_image != '-' else None
-    }
 
+def product_details(product_id):
+    
+    current_user.id = current_user.id if current_user.is_authenticated else '0'
+
+    user_data = {
+        'username': current_user.username if current_user.is_authenticated else 'Guest',
+        'email': current_user.email if current_user.is_authenticated else '',
+        'phone': current_user.phone if current_user.is_authenticated and current_user.phone != '-' else '',
+        'address': current_user.address if current_user.is_authenticated and current_user.address != '-' else '',
+        'profile_image': current_user.profile_image if current_user.is_authenticated and current_user.profile_image != '-' else None
+    }
+    
     product = None
     with open("databases/products.txt", "r") as file:
         for line in file:
