@@ -2,9 +2,9 @@
 # Group : ChatGPT (TT3L)
 
 # Group Members :
-# WILLIAM SIM WEE LIAN 243UC245RN (Leader)
+# NG KEAN TIONG 242UC244V5 (Leader)
+# WILLIAM SIM WEE LIAN 243UC245RN 
 # FOO YAU YUN 1211111966
-# NG KEAN TIONG 242UC244V5
 # TAN ZHE ENN 242UC2451F
 #================================================================================================================
 
