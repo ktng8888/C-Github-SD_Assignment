@@ -1922,7 +1922,7 @@ def delivered_order(order_id):
             for line in file:
                 parts = line.strip().split('||')
                 if len(parts) >= 8 and parts[0] == order_id:
-                    # Update status to 'completed' and set delivered date
+                    # Update status to 'delivered' and set delivered date
                     parts[7] = 'delivered'
                     parts[8] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     updated_lines.append('||'.join(parts) + '\n')
@@ -1956,9 +1956,8 @@ def complete_order(order_id):
             for line in file:
                 parts = line.strip().split('||')
                 if len(parts) >= 8 and parts[0] == order_id:
-                    # Update status to 'completed' and set delivered date
+                    # Update status to 'completed'
                     parts[7] = 'completed'
-                    parts[8] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     updated_lines.append('||'.join(parts) + '\n')
                     order_found = True
                 else:
