@@ -1,3 +1,13 @@
+#================================================================================================================
+# Group : ChatGPT (TT3L)
+
+# Group Members :
+# WILLIAM SIM WEE LIAN 243UC245RN (Leader)
+# FOO YAU YUN 1211111966
+# NG KEAN TIONG 242UC244V5
+# TAN ZHE ENN 242UC2451F
+#================================================================================================================
+
 import random 
 import os
 import time
@@ -12,6 +22,7 @@ from collections import defaultdict #yy
 # Strategy Pattern
 # Usage : Admin Dashboard Order Bar Chart (Display bar chart based on different display selection)
 # Flask Route : @app.route('/admin/admin_dashboard')
+
 class OrderDisplayStrategy(ABC):
     @abstractmethod
     def get_orders_data(self, raw_orders):
