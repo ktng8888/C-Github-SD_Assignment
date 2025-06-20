@@ -22,7 +22,6 @@ from collections import defaultdict #yy
 # Strategy Pattern
 # Usage : Admin Dashboard Order Bar Chart (Display bar chart based on different display selection)
 # Flask Route : @app.route('/admin/admin_dashboard')
-
 class OrderDisplayStrategy(ABC):
     @abstractmethod
     def get_orders_data(self, raw_orders):
@@ -1494,7 +1493,8 @@ def account_sold():
     except FileNotFoundError:
         pass
     
-    sold_products.sort(key=lambda x: int(x['id']), reverse=True)
+    sold_products.sort(key=lambda x: (0 if x['order_status'] == 'shipping' else 1, -int(x['id'])))
+
     sold_products_count = len(sold_products)
 
     return render_template('account/account.html', active_page='sold',
@@ -1592,6 +1592,7 @@ def remove_favorite(product_id):
 def account_orders():
     active_tab = request.args.get('tab', 'shipping')
     shipping_orders = []
+    delivered_orders = []
     completed_orders = []
     
     # First, get all orders for current user
@@ -1667,6 +1668,8 @@ def account_orders():
                         # Sort into appropriate lists based on status
                         if order_info['status'] == 'shipping':
                             shipping_orders.append(order_product)
+                        elif order_info['status'] == 'delivered':
+                            delivered_orders.append(order_product)
                         elif order_info['status'] == 'completed':
                             completed_orders.append(order_product)
     except FileNotFoundError:
@@ -1674,17 +1677,21 @@ def account_orders():
     
     # Sort orders by order date in reverse order (newest first)
     shipping_orders.sort(key=lambda x: x['order_date'], reverse=True)
+    delivered_orders.sort(key=lambda x: x['order_date'], reverse=True)
     completed_orders.sort(key=lambda x: x['order_date'], reverse=True)
     
     shipping_orders_count = len(shipping_orders)
+    delivered_orders_count = len(delivered_orders)
     completed_orders_count = len(completed_orders)
     
     return render_template('account/account.html', 
                           active_page='orders',
                           active_tab=active_tab,
                           shipping_orders=shipping_orders,
+                          delivered_orders=delivered_orders,
                           completed_orders=completed_orders,
                           shipping_orders_count=shipping_orders_count,
+                          delivered_orders_count=delivered_orders_count,
                           completed_orders_count=completed_orders_count)
 
 @app.route('/product/details/<product_id>')
@@ -1902,6 +1909,39 @@ def account_settings():
     return render_template('account/account.html', 
                          active_page='settings', 
                          user_data=user_data)
+
+@app.route('/delivered_order/<order_id>', methods=['POST'])
+@login_required
+def delivered_order(order_id):
+
+    updated_lines = []
+    order_found = False
+    
+    try:
+        with open("databases/orders.txt", "r") as file:
+            for line in file:
+                parts = line.strip().split('||')
+                if len(parts) >= 8 and parts[0] == order_id:
+                    # Update status to 'completed' and set delivered date
+                    parts[7] = 'delivered'
+                    parts[8] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    updated_lines.append('||'.join(parts) + '\n')
+                    order_found = True
+                else:
+                    updated_lines.append(line)
+        
+        if order_found:
+            with open("databases/orders.txt", "w") as file:
+                file.writelines(updated_lines)
+            
+            flash("Order marked as delivered!", "success")
+        else:
+            flash("Order not found", "error")
+            
+    except Exception as e:
+        flash("Error updating order status", "error")
+    
+    return redirect(url_for('account_orders', tab='shipping'))
 
 #William function feedback 
 @app.route('/complete_order/<order_id>', methods=['POST'])

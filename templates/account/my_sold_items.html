@@ -28,6 +28,22 @@
                     Order Status: {{ product.order_status }}
                 {% endif %}
             </div>
+            {% if product.order_status == "shipping" %}
+                <div class="product-actions">
+                    <button onclick="markAsDelivered('{{ product.order_id }}')" class="action-btn complete-btn">
+                        <i class="fas fa-check-circle"></i> Mark as Delivered
+                    </button>
+                </div>
+            {% elif product.order_status == "delivered" %}
+                <div class="notice_text">
+                    <i class="fas fa-check-circle"></i> Item have been delivered!
+                </div>
+            {% elif product.order_status == "completed" %}
+                <div class="notice_text">
+                    <i class="fas fa-check-circle"></i> Order have been completed!
+                </div>
+            {% endif %}
+            
             </div>
         </div>
         {% endfor %}
@@ -85,6 +101,61 @@
 .product-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.product-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.action-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.details-btn {
+    background-color: #e0e7ff;
+    color: #4f46e5;
+}
+
+.details-btn:hover {
+    background-color: #c7d2fe;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.1);
+}
+
+.complete-btn {
+    background-color: #10b981;
+    color: white;
+}
+
+.complete-btn:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.1);
+}
+
+.notice_text {
+    margin-top: 15px;
+    padding: 3px;
+    background-color: #d1fae5;
+    color: #065f46;
+    border-radius: 6px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 /* Modal Styles */
@@ -228,4 +299,21 @@ document.addEventListener('keydown', function(event) {
         closeProductModal();
     }
 });
+
+function markAsDelivered(orderId) {
+    if (confirm("Are you sure you want to mark this order as delivered?")) {
+        fetch(`/delivered_order/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Error marking order as delivered");
+            }
+        });
+    }
+}
 </script>
