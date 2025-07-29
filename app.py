@@ -231,12 +231,12 @@ class Audio(ElectronicProduct):
 # - @app.route('/product/<product_id>')
 # - @app.route('/account/...')
 
-class ImageSubject(ABC):
+class ImageSubject(ABC): #implement both subject which real and fake image
     @abstractmethod
     def display(self) -> str:
         pass
 
-class RealProductImage(ImageSubject):
+class RealProductImage(ImageSubject): #will be 
     def __init__(self, filename):
         self.filename = filename
         self._verify_image()
